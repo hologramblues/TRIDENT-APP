@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Notes</title>
+<style>
+  :root {
+    --bg: #08090C;
+    --dim: #3D4149;
+    --mid: #8B9099;
+    --bright: #E8E4DA;
+    --ember: #B8763D;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--bright);
+    font-family: 'Avenir Next', 'Futura', 'Segoe UI', system-ui, sans-serif;
+    user-select: none; -webkit-user-select: none;
+    overscroll-behavior: none;
+  }
+  .screen { display: none; min-height: 100vh; min-height: 100dvh; flex-direction: column; }
+  .screen.active { display: flex; }
+  .mono { font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; }
+
+  /* ————— Écran saisie ————— */
+  #input-screen .center { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 28px; max-width: 520px; width: 100%; margin: 0 auto; }
+  .brand { font-size: 11px; letter-spacing: 0.35em; color: var(--dim); margin-bottom: 28px; }
+  #words {
+    background: transparent; border: none; border-bottom: 1px solid var(--dim);
+    outline: none; color: var(--bright); font-family: inherit;
+    font-size: 26px; font-weight: 500; padding: 10px 0; width: 100%; caret-color: var(--ember);
+    user-select: text; -webkit-user-select: text;
+  }
+  .row { display: flex; gap: 12px; margin-top: 40px; }
+  .btn {
+    background: transparent; border: 1px solid var(--dim); color: var(--dim);
+    font-family: 'SF Mono', 'Menlo', monospace; font-size: 13px; letter-spacing: 0.3em;
+    padding: 16px 0; flex: 1; cursor: pointer; transition: all 0.25s ease; text-align: center;
+  }
+  .btn.ready { border-color: var(--ember); color: var(--ember); }
+  .btn.mic { flex: 0 0 58px; letter-spacing: 0; font-size: 16px; }
+  .btn.mic.listening { border-color: var(--ember); color: var(--ember); animation: breathe 1.6s ease-in-out infinite; }
+  #err { font-size: 12px; color: var(--ember); margin-top: 14px; line-height: 1.5; word-break: break-word; }
+
+  /* ————— Réglages ————— */
+  #settings-screen .center { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 28px; max-width: 520px; width: 100%; margin: 0 auto; }
+  #apikey {
+    background: transparent; border: none; border-bottom: 1px solid var(--dim);
+    outline: none; color: var(--bright); font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 14px; padding: 10px 0; width: 100%; caret-color: var(--ember);
+    user-select: text; -webkit-user-select: text;
+  }
+  .hint { font-size: 11px; color: var(--dim); margin-top: 16px; line-height: 1.6; }
+
+  /* ————— Chargement ————— */
+  #loading-screen { align-items: center; justify-content: center; }
+  .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); animation: breathe 1.6s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { opacity: 0.15; } 50% { opacity: 0.7; } }
+
+  /* ————— Cycle ————— */
+  #cycle-screen .top { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; padding-top: calc(18px + env(safe-area-inset-top)); }
+  #cycle-words { font-size: 11px; letter-spacing: 0.15em; color: var(--dim); }
+  #cycle-close { font-size: 13px; color: var(--dim); padding: 6px 10px; cursor: pointer; }
+  #cycle-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 24px; text-align: center; }
+  #cycle-word { font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; line-height: 1.1; word-break: break-word; }
+  #cycle-cat { font-family: 'SF Mono', 'Menlo', monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--mid); margin-top: 18px; }
+  #cycle-qlabel { font-family: 'SF Mono', 'Menlo', monospace; font-size: 11px; letter-spacing: 0.35em; color: var(--ember); margin-bottom: 24px; }
+  #cycle-bottom { padding: 0 22px calc(26px + env(safe-area-inset-bottom)); }
+  #cycle-alert { font-family: 'SF Mono', 'Menlo', monospace; font-size: 11px; color: var(--ember); margin-bottom: 14px; line-height: 1.5; }
+  .bottom-row { display: flex; justify-content: space-between; align-items: center; }
+  #dots { display: flex; gap: 7px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dim); transition: background 0.2s; }
+  .dot.on { background: var(--ember); }
+  .dot.q { border: 1px solid var(--dim); background: transparent; }
+  .dot.q.on { border-color: var(--ember); background: var(--ember); }
+  #pos { font-family: 'SF Mono', 'Menlo', monospace; font-size: 12px; color: var(--mid); }
+
+  /* ————— Mode Notes (déguisé) ————— */
+  #notes-screen { background: #FFFFFF; color: #1C1C1E; }
+  @media (prefers-color-scheme: dark) {
+    #notes-screen { background: #000000; color: #FFFFFF; }
+    #notes-screen .notes-bar { background: rgba(20,20,20,0.94); }
+    #notes-screen .notes-date { color: #8E8E93; }
+  }
+  #notes-screen .notes-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top));
+    background: rgba(249,249,249,0.94); backdrop-filter: blur(10px);
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  }
+  .notes-back { color: #E0A800; font-size: 17px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .notes-back .chev { font-size: 24px; line-height: 1; margin-top: -2px; }
+  .notes-done { color: #E0A800; font-size: 17px; font-weight: 600; cursor: pointer; }
+  .notes-date { text-align: center; color: #6D6D72; font-size: 12px; padding: 10px 0 0; font-family: -apple-system, sans-serif; }
+  #note-body {
+    flex: 1; width: 100%; border: none; outline: none; resize: none;
+    background: transparent; color: inherit;
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    font-size: 17px; line-height: 1.45; padding: 12px 20px;
+    user-select: text; -webkit-user-select: text;
+  }
+</style>
+</head>
+<body>
+
+<!-- Réglages (clé API) -->
+<div class="screen" id="settings-screen">
+  <div class="center">
+    <div class="brand mono">RÉGLAGES</div>
+    <input id="apikey" type="password" placeholder="clé API Anthropic (sk-ant-…)" autocomplete="off">
+    <div class="row">
+      <div class="btn mono" id="save-key">ENREGISTRER</div>
+    </div>
+    <div class="hint">La clé reste sur cet appareil (localStorage). Console Anthropic → API Keys.</div>
+  </div>
+</div>
+
+<!-- Saisie -->
+<div class="screen" id="input-screen">
+  <div class="center">
+    <div class="brand mono" id="brand">MASTER WORD</div>
+    <input id="words" type="text" placeholder="trois mots" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <div id="err"></div>
+    <div class="row">
+      <div class="btn mono" id="go">DÉDUIRE</div>
+      <div class="btn mic mono" id="mic">●</div>
+    </div>
+  </div>
+</div>
+
+<!-- Chargement -->
+<div class="screen" id="loading-screen"><div class="pulse"></div></div>
+
+<!-- Cycle -->
+<div class="screen" id="cycle-screen">
+  <div class="top">
+    <div class="mono" id="cycle-words"></div>
+    <div class="mono" id="cycle-close">✕</div>
+  </div>
+  <div id="cycle-center">
+    <div class="mono" id="cycle-qlabel" style="display:none">DÉPARTAGE</div>
+    <div id="cycle-word"></div>
+    <div id="cycle-cat"></div>
+  </div>
+  <div id="cycle-bottom">
+    <div id="cycle-alert" style="display:none"></div>
+    <div class="bottom-row">
+      <div id="dots"></div>
+      <div id="pos"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Mode Notes déguisé -->
+<div class="screen" id="notes-screen">
+  <div class="notes-bar">
+    <div class="notes-back"><span class="chev">‹</span> Notes</div>
+    <div class="notes-done" id="notes-done">OK</div>
+  </div>
+  <div class="notes-date" id="notes-date"></div>
+  <textarea id="note-body" autocomplete="off" autocorrect="off" autocapitalize="sentences"></textarea>
+</div>
+
+<script>
+// ————————————————————— Prompt de déduction (V1 consolidée, tous patchs) —————————————————————
+const DEDUCTION_PROMPT = `Tu es un moteur de déduction pour un jeu d'association de mots en français. Une personne pense à un MOT SECRET et a donné trois mots, DANS UN ORDRE ALÉATOIRE :
+
+- un mot de la MÊME CATÉGORIE que le mot secret
+- un mot commençant par la PREMIÈRE lettre du mot secret
+- un mot commençant par la DEUXIÈME lettre du mot secret
+
+Tu ne sais pas quel mot joue quel rôle. Ta mission : déduire le mot secret. Le mot secret n'est jamais IDENTIQUE à un des trois mots donnés — mais il peut fortement leur RESSEMBLER (mêmes premières lettres, sonorité proche) : c'est même fréquent et c'est un INDICE FAVORABLE, car le spectateur qui cherche "un mot commençant par la même lettre" part de son mot secret et pense souvent à un mot qui lui ressemble (qui pense TOURNEVIS donne volontiers "tourbillon"). Ne pénalise JAMAIS un candidat pour sa ressemblance avec un mot donné.
+
+MÉTHODE (raisonne en interne, étape par étape) :
+
+1. HYPOTHÈSES DE RÔLES : il existe 6 attributions possibles (3 choix de mot-catégorie × 2 ordres pour les lettres). ÉVALUE SÉRIEUSEMENT LES 6 — ne rejette jamais une hypothèse sur la seule base des indices ci-dessous, ce sont des tendances faibles qui servent uniquement à départager deux hypothèses par ailleurs équivalentes :
+   - Le mot "1ère lettre" a été demandé comme "un mot intéressant" : parfois plus long ou recherché
+   - Le mot "2ème lettre" a été demandé simple : parfois plus court
+   - Le mot-catégorie est souvent un archétype courant de sa catégorie
+   ATTENTION : les trois mots peuvent être de taille similaire et tous appartenir à des catégories évidentes. Dans ce cas, seule l'étape 3 permet de trancher.
+
+2. Pour CHAQUE hypothèse :
+   a. Liste les catégories du mot-catégorie supposé, du plus spécifique au plus général. Les "catégories" incluent aussi les ASSOCIATIONS NATURELLES, pas seulement les familles taxonomiques : la matière (miroir→verre), l'usage, le lieu, le thème (avion→voyage). Le spectateur donne le premier mot qui lui vient, pas une taxonomie rigoureuse.
+   b. Construis le préfixe : [initiale mot A] + [initiale mot B] (ignore les accents, E = É = È)
+   c. Cherche des noms communs français dans ces catégories commençant par ce préfixe
+   d. Les gens pensent à des mots SIMPLES, CONCRETS, COURANTS — c'est un critère DÉCISIF, pas une préférence molle. Le mot secret est presque toujours un objet du quotidien, un animal connu, un aliment, un vêtement, un meuble... Un mot abstrait, savant, ou qu'on n'emploie presque jamais dans la vie courante (mousson, zéphyr, ostracisme) est un très mauvais candidat même s'il colle parfaitement à la catégorie et au préfixe : classe-le loin derrière tout candidat concret et banal.
+
+3. ÉLIMINATION CROISÉE — c'est ton outil principal de décision : pour chaque hypothèse, la question n'est pas "ce mot peut-il être une catégorie ?" mais "existe-t-il un mot COURANT dans cette catégorie avec ce préfixe ?". Une hypothèse est forte quand elle produit un candidat évident ET que les concurrentes ne produisent rien. Une hypothèse qui ne produit que des mots rares ou tirés par les cheveux est quasi morte, même si son mot-catégorie semblait le plus évident. Pour départager deux hypothèses vivantes, privilégie l'ASSOCIATION LA PLUS NATURELLE dans le sens master word → mot donné, ET le candidat le plus concret et courant : quelqu'un qui pense "vipère" dirait "serpent", pas "mammouth" ; quelqu'un qui pense "portefeuille" dit spontanément "sac à main" ; entre TOURNEVIS (cat=marteau, outil↔outil, objet banal) et MOUSSON (cat=tourbillon, mot rare), tournevis gagne largement.
+
+4. FALLBACKS — si aucune hypothèse ne produit de candidat solide :
+   a. Catégorie comprise de façon encore plus large ou décalée par le spectateur
+   b. Le spectateur a mal compté ses lettres (teste 1ère + 3ème lettre)
+   c. Mot secret très court ou avec H muet
+
+FORMAT DE SORTIE — raisonne d'abord en notes ULTRA-BRÈVES (style télégraphique, 120 mots maximum au total), puis TERMINE IMPÉRATIVEMENT ta réponse par ce bloc JSON (sans backticks), qui doit être la toute dernière chose écrite :
+
+{
+  "candidats": [
+    {"mot": "...", "categorie": "...", "score": 7}
+  ],
+  "alerte": null,
+  "question": null
+}
+
+"candidats" : liste EXHAUSTIVE des mots possibles, toutes hypothèses confondues, y compris celles jugées faibles — classés STRICTEMENT du plus probable au moins probable. N'écarte aucun mot plausible : mieux vaut un candidat improbable en fin de liste qu'un mot manquant. MAIS chaque candidat listé doit avoir un VRAI lien de catégorie ou d'association avec le mot-catégorie de son hypothèse : un mot qui matche seulement le préfixe sans lien de catégorie crédible n'est PAS un candidat et ne doit pas figurer dans la liste (si "tourbillon" est le mot-catégorie, "moto" ou "mouche" n'ont aucun lien réel avec lui — on ne les liste pas). Une liste courte et juste vaut mieux qu'une liste gonflée de faux candidats. Entre candidats d'une même hypothèse, classe par PROXIMITÉ FINE avec le mot-catégorie : le plus proche cousin d'abord (tablette→téléphone avant tablette→télé ; écharpe→chapeau avant écharpe→chemise). Score de 1 à 10.
+"alerte" : null, ou avertissement très court si plusieurs lectures restent crédibles.
+"question" : null, ou si les candidats de tête sont proches : une courte question à poser au spectateur pour départager, formulée comme une perception de mentaliste et non comme une question binaire (ex : "je le sens plutôt vers le haut, non ?").`;
+
+// ————————————————————— État —————————————————————
+const $ = (id) => document.getElementById(id);
+let result = null, idx = 0, cameFromNotes = false, currentWords = "";
+
+function show(id) {
+  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  $(id).classList.add("active");
+}
+
+// ————————————————————— Clé API —————————————————————
+function getKey() { try { return localStorage.getItem("mw_key") || ""; } catch (_) { return ""; } }
+$("save-key").addEventListener("click", () => {
+  const k = $("apikey").value.trim();
+  if (!k) return;
+  try { localStorage.setItem("mw_key", k); } catch (_) {}
+  show("input-screen");
+});
+// accès réglages : appui long sur "MASTER WORD"
+let brandTimer = null;
+$("brand").addEventListener("touchstart", () => { brandTimer = setTimeout(() => { $("apikey").value = getKey(); show("settings-screen"); }, 700); });
+$("brand").addEventListener("touchend", () => clearTimeout(brandTimer));
+$("brand").addEventListener("mousedown", () => { brandTimer = setTimeout(() => { $("apikey").value = getKey(); show("settings-screen"); }, 700); });
+$("brand").addEventListener("mouseup", () => clearTimeout(brandTimer));
+
+// ————————————————————— Déduction —————————————————————
+function extractJson(raw) {
+  const cleaned = raw.replace(/```json|```/g, "");
+  const anchor = cleaned.lastIndexOf('"candidats"');
+  if (anchor === -1) return null;
+  const start = cleaned.lastIndexOf("{", anchor);
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  try { return JSON.parse(cleaned.slice(start, end + 1)); } catch (_) { return null; }
+}
+
+async function callAPI(messages) {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": getKey(),
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 2000, messages }),
+  });
+  const data = await r.json();
+  if (!r.ok || data.error) {
+    const msg = (data.error && data.error.message) || `HTTP ${r.status}`;
+    throw new Error(msg);
+  }
+  return (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
+}
+
+async function deduce(raw, fromNotes) {
+  const clean = raw.trim().replace(/[,;\n]+/g, " ").replace(/\s+/g, " ");
+  if (clean.split(" ").filter(Boolean).length < 3) return;
+  if (!getKey()) { $("apikey").value = ""; show("settings-screen"); return; }
+  currentWords = clean;
+  cameFromNotes = !!fromNotes;
+  if (!fromNotes) show("loading-screen");
+  try {
+    const userMsg = { role: "user", content: `${DEDUCTION_PROMPT}\n\nENTRÉE (ordre aléatoire) : ${clean}` };
+    let text = await callAPI([userMsg]);
+    let parsed = extractJson(text);
+    if (!parsed) {
+      // rattrapage : réponse tronquée avant le JSON
+      text = await callAPI([
+        userMsg,
+        { role: "assistant", content: text },
+        { role: "user", content: "Conclus MAINTENANT : donne UNIQUEMENT le bloc JSON final, sans aucun autre texte." },
+      ]);
+      parsed = extractJson(text);
+    }
+    if (!parsed || !parsed.candidats || !parsed.candidats.length) throw new Error("Réponse sans candidats");
+    result = parsed;
+    idx = 0;
+    if (fromNotes) {
+      notesReady = true; // résultat prêt, on reste déguisé jusqu'au geste
+    } else {
+      renderCycle(); show("cycle-screen");
+    }
+  } catch (e) {
+    if (fromNotes) { notesReady = false; notesError = String(e.message || e); }
+    else { $("err").textContent = String(e.message || e); show("input-screen"); }
+  }
+}
+
+// ————————————————————— Écran cycle —————————————————————
+function renderCycle() {
+  const c = result.candidats;
+  const hasQ = !!result.question;
+  const onQ = idx >= c.length;
+  $("cycle-words").textContent = currentWords.replace(/ /g, " · ");
+  $("cycle-alert").style.display = result.alerte && idx === 0 ? "block" : "none";
+  $("cycle-alert").textContent = result.alerte ? "⚠ " + result.alerte : "";
+  if (onQ) {
+    $("cycle-qlabel").style.display = "block";
+    $("cycle-word").style.cssText = "font-size:26px;font-weight:500;line-height:1.45;text-transform:none;max-width:420px";
+    $("cycle-word").textContent = result.question;
+    $("cycle-cat").textContent = "";
+    $("pos").textContent = "?";
+  } else {
+    const cur = c[idx];
+    $("cycle-qlabel").style.display = "none";
+    $("cycle-word").style.cssText = "font-size:" + (cur.mot.length > 10 ? 44 : 58) + "px";
+    $("cycle-word").textContent = cur.mot;
+    $("cycle-cat").textContent = cur.categorie || "";
+    $("pos").textContent = (idx + 1) + "/" + c.length + " · " + cur.score;
+  }
+  const dots = $("dots"); dots.innerHTML = "";
+  c.forEach((_, i) => { const d = document.createElement("div"); d.className = "dot" + (i === idx ? " on" : ""); dots.appendChild(d); });
+  if (hasQ) { const d = document.createElement("div"); d.className = "dot q" + (onQ ? " on" : ""); dots.appendChild(d); }
+}
+$("cycle-screen").addEventListener("click", (e) => {
+  if (e.target.id === "cycle-close") {
+    if (cameFromNotes) { show("notes-screen"); } else { $("words").value = ""; $("err").textContent = ""; show("input-screen"); }
+    return;
+  }
+  const hasQ = !!result.question;
+  const lastIdx = result.candidats.length - (hasQ ? 0 : 1);
+  if (e.clientX < window.innerWidth * 0.3) idx = Math.max(idx - 1, 0);
+  else idx = Math.min(idx + 1, lastIdx);
+  renderCycle();
+});
+
+// ————————————————————— Saisie clavier —————————————————————
+$("go").addEventListener("click", () => deduce($("words").value, false));
+$("words").addEventListener("input", () => {
+  const n = $("words").value.trim().split(/\s+/).filter(Boolean).length;
+  $("go").classList.toggle("ready", n >= 3);
+});
+$("words").addEventListener("keydown", (e) => { if (e.key === "Enter") deduce($("words").value, false); });
+
+// ————————————————————— Mode voix —————————————————————
+const STOPWORDS = new Set("le la les un une des du de d l et ou où mais donc or ni car que qui quoi dont il elle on nous vous ils elles je tu me te se ce cet cette ces mon ton son ma ta sa mes tes ses notre votre leur nos vos leurs à au aux en dans par pour sur sous avec sans est sont était très plus moins alors oui non ok d'accord accord voilà bon ben euh hum donc alors ensuite puis après premier deuxième troisième mot mots pense penser dit dis dites choisi".split(" "));
+let recog = null, listening = false;
+$("mic").addEventListener("click", () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { $("err").textContent = "Reconnaissance vocale non disponible sur ce navigateur."; return; }
+  if (listening) { recog.stop(); return; }
+  recog = new SR();
+  recog.lang = "fr-FR";
+  recog.continuous = true;
+  recog.interimResults = true;
+  let transcript = "";
+  recog.onresult = (ev) => {
+    transcript = "";
+    for (let i = 0; i < ev.results.length; i++) transcript += ev.results[i][0].transcript + " ";
+    // les 3 derniers mots pleins (hors mots-outils) — tu répètes les mots du spectateur en dernier
+    const toks = transcript.toLowerCase().replace(/[.,!?';:]/g, " ").split(/\s+/).filter((w) => w.length > 1 && !STOPWORDS.has(w));
+    $("words").value = toks.slice(-3).join(" ");
+    $("words").dispatchEvent(new Event("input"));
+  };
+  recog.onend = () => { listening = false; $("mic").classList.remove("listening"); };
+  recog.onerror = () => { listening = false; $("mic").classList.remove("listening"); };
+  recog.start();
+  listening = true;
+  $("mic").classList.add("listening");
+});
+
+// ————————————————————— Mode Notes déguisé —————————————————————
+let notesReady = false, notesError = "";
+const now = new Date();
+$("notes-date").textContent = now.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) + " à " + now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+// "OK" (Terminé) : lance la déduction en silence, l'écran ne bouge pas
+$("notes-done").addEventListener("click", () => {
+  $("note-body").blur();
+  notesReady = false; notesError = "";
+  deduce($("note-body").value, true);
+});
+// appui long n'importe où sur la note : bascule vers le cycle quand c'est prêt
+let noteTimer = null;
+function noteHoldStart() {
+  noteTimer = setTimeout(() => {
+    if (notesReady && result) { renderCycle(); show("cycle-screen"); }
+    else if (notesError) { $("err").textContent = notesError; show("input-screen"); }
+  }, 600);
+}
+function noteHoldEnd() { clearTimeout(noteTimer); }
+$("notes-screen").addEventListener("touchstart", noteHoldStart);
+$("notes-screen").addEventListener("touchend", noteHoldEnd);
+$("notes-screen").addEventListener("mousedown", noteHoldStart);
+$("notes-screen").addEventListener("mouseup", noteHoldEnd);
+// retour "‹ Notes" : sort du déguisement vers l'écran normal
+document.querySelector(".notes-back").addEventListener("click", () => { $("err").textContent = ""; show("input-screen"); });
+
+// ————————————————————— Entrée par URL —————————————————————
+// ?w=ocean,spatule,citadelle  → déduction directe
+// ?mode=notes                 → ouvre le déguisement Notes
+// ?w=...&stealth=1            → déduit puis attend en mode Notes (appui long pour révéler)
+(function boot() {
+  const p = new URLSearchParams(location.search);
+  const w = (p.get("w") || "").replace(/[+,]/g, " ").trim();
+  const mode = p.get("mode") || "";
+  const stealth = p.get("stealth") === "1";
+  if (!getKey()) { show("settings-screen"); return; }
+  if (w && stealth) { $("note-body").value = ""; show("notes-screen"); deduce(w, true); return; }
+  if (w) { $("words").value = w; deduce(w, false); return; }
+  if (mode === "notes") { show("notes-screen"); return; }
+  show("input-screen");
+})();
+</script>
+</body>
+</html>
