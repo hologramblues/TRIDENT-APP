@@ -48,7 +48,7 @@
   #err { font-size: 12px; color: var(--ember); margin-top: 14px; line-height: 1.5; word-break: break-word; }
 
   /* ————— Réglages ————— */
-  #settings-screen .center { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 28px; max-width: 520px; width: 100%; margin: 0 auto; }
+  #settings-screen .center { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding: 0 28px calc(32px + env(safe-area-inset-bottom)); padding-top: calc(44px + env(safe-area-inset-top)); max-width: 520px; width: 100%; margin: 0 auto; overflow-y: auto; }
   #apikey {
     background: transparent; border: none; border-bottom: 1px solid var(--dim);
     outline: none; color: var(--bright); font-family: 'SF Mono', 'Menlo', monospace;
@@ -56,6 +56,16 @@
     user-select: text; -webkit-user-select: text;
   }
   .hint { font-size: 11px; color: var(--dim); margin-top: 16px; line-height: 1.6; }
+
+  /* ————— Journal (dans réglages) ————— */
+  #journal-list { margin-top: 6px; max-height: 38vh; overflow-y: auto; }
+  .j-entry { padding: 10px 0; border-bottom: 1px solid #1A1C22; cursor: pointer; }
+  .j-date { font-size: 10px; color: var(--dim); letter-spacing: 0.1em; }
+  .j-mots { font-size: 13px; color: var(--mid); margin: 3px 0; }
+  .j-status { font-size: 11px; letter-spacing: 0.05em; color: var(--dim); }
+  .j-status.ok { color: var(--ember); }
+  .j-status.ko { color: var(--bright); }
+  .j-empty { font-size: 11px; color: var(--dim); padding: 10px 0; }
 
   /* ————— Chargement ————— */
   #loading-screen { align-items: center; justify-content: center; }
@@ -117,6 +127,13 @@
       <div class="btn mono" id="save-key">ENREGISTRER</div>
     </div>
     <div class="hint">La clé reste sur cet appareil (localStorage). Console Anthropic → API Keys.</div>
+    <div class="brand mono" style="margin-top:44px">JOURNAL</div>
+    <div id="journal-list"></div>
+    <div class="row" style="margin-top:20px">
+      <div class="btn mono" id="j-export">EXPORTER</div>
+      <div class="btn mono" id="j-clear">VIDER</div>
+    </div>
+    <div class="hint">Un tour = un appui long sur le mot trouvé pendant le cycle. Toucher une entrée pour renseigner le mot réel si l'app l'a raté. EXPORTER copie tout pour analyse.</div>
   </div>
 </div>
 
@@ -222,6 +239,7 @@ let result = null, idx = 0, cameFromNotes = false, currentWords = "";
 function show(id) {
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
   $(id).classList.add("active");
+  if (id === "settings-screen") renderJournal();
 }
 
 // ————————————————————— Clé API —————————————————————
@@ -238,6 +256,108 @@ $("brand").addEventListener("touchstart", () => { brandTimer = setTimeout(() => 
 $("brand").addEventListener("touchend", () => clearTimeout(brandTimer));
 $("brand").addEventListener("mousedown", () => { brandTimer = setTimeout(() => { $("apikey").value = getKey(); show("settings-screen"); }, 700); });
 $("brand").addEventListener("mouseup", () => clearTimeout(brandTimer));
+
+// ————————————————————— Journal des tours —————————————————————
+// Chaque déduction est enregistrée localement (localStorage, 200 tours max).
+// Pendant le cycle : appui long sur le mot affiché = "c'était lui" (valide + rang).
+// Dans RÉGLAGES : toucher une entrée pour renseigner le mot réel si l'app l'a raté,
+// EXPORTER copie tout le journal (à coller pour analyse et affinage du prompt).
+function getJournal() { try { return JSON.parse(localStorage.getItem("mw_journal") || "[]"); } catch (_) { return []; } }
+function saveJournal(j) { try { localStorage.setItem("mw_journal", JSON.stringify(j.slice(-200))); } catch (_) {} }
+let currentTs = null; // identifiant (timestamp) de la déduction en cours
+
+function logDeduction(mots, parsed) {
+  const j = getJournal();
+  currentTs = Date.now();
+  j.push({
+    ts: currentTs,
+    mots,
+    candidats: parsed.candidats.map((c) => ({ mot: c.mot, categorie: c.categorie || "", score: c.score })),
+    alerte: parsed.alerte || null,
+    valide: null, rang: null, vrai: null,
+  });
+  saveJournal(j);
+}
+
+function validateCurrent() {
+  if (!result || idx >= result.candidats.length) return; // pas de validation sur l'écran question
+  const j = getJournal();
+  const e = j.find((x) => x.ts === currentTs);
+  if (!e) return;
+  e.valide = result.candidats[idx].mot;
+  e.rang = idx + 1;
+  e.vrai = null;
+  saveJournal(j);
+  // feedback quasi invisible : brève baisse d'opacité du mot
+  const w = $("cycle-word");
+  w.style.transition = "opacity 0.25s"; w.style.opacity = "0.25";
+  setTimeout(() => { w.style.opacity = "1"; }, 260);
+}
+
+function renderJournal() {
+  const j = getJournal();
+  const el = $("journal-list");
+  el.innerHTML = "";
+  if (!j.length) { const v = document.createElement("div"); v.className = "j-empty mono"; v.textContent = "aucun tour enregistré"; el.appendChild(v); return; }
+  for (let i = j.length - 1; i >= 0; i--) {
+    const e = j[i];
+    const d = new Date(e.ts);
+    const div = document.createElement("div");
+    div.className = "j-entry";
+    const l1 = document.createElement("div"); l1.className = "j-date mono";
+    l1.textContent = d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }) + " " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    const l2 = document.createElement("div"); l2.className = "j-mots"; l2.textContent = e.mots;
+    const l3 = document.createElement("div"); l3.className = "j-status mono";
+    if (e.valide) { l3.textContent = "✓ " + e.valide.toUpperCase() + " · rang " + e.rang; l3.classList.add("ok"); }
+    else if (e.vrai) { l3.textContent = "✗ raté · c'était " + e.vrai.toUpperCase(); l3.classList.add("ko"); }
+    else l3.textContent = "non renseigné";
+    div.appendChild(l1); div.appendChild(l2); div.appendChild(l3);
+    div.addEventListener("click", () => {
+      const v = prompt("Mot réellement pensé (si l'app l'a raté) :", e.vrai || "");
+      if (v === null) return;
+      e.vrai = v.trim().toLowerCase() || null;
+      if (e.vrai) {
+        // si le vrai mot était en fait dans la liste, on le note comme trouvé avec son rang
+        const r = e.candidats.findIndex((c) => c.mot.toLowerCase() === e.vrai);
+        if (r >= 0) { e.valide = e.candidats[r].mot; e.rang = r + 1; e.vrai = null; }
+        else { e.valide = null; e.rang = null; }
+      }
+      saveJournal(j);
+      renderJournal();
+    });
+    el.appendChild(div);
+  }
+}
+
+function exportJournal() {
+  const j = getJournal();
+  if (!j.length) return;
+  const lines = ["MASTER WORD — journal (" + j.length + " tours)", ""];
+  j.forEach((e) => {
+    const d = new Date(e.ts);
+    lines.push(d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) + " · " + e.mots);
+    lines.push("  proposés : " + e.candidats.map((c) => c.mot.toUpperCase() + " (" + (c.categorie || "?") + ", " + c.score + ")").join(" · "));
+    if (e.alerte) lines.push("  alerte : " + e.alerte);
+    if (e.valide) lines.push("  ✓ trouvé : " + e.valide.toUpperCase() + " — rang " + e.rang);
+    else if (e.vrai) lines.push("  ✗ raté : le vrai mot était " + e.vrai.toUpperCase());
+    else lines.push("  (résultat non renseigné)");
+    lines.push("");
+  });
+  const txt = lines.join("\n");
+  const done = () => { $("j-export").textContent = "COPIÉ"; setTimeout(() => { $("j-export").textContent = "EXPORTER"; }, 1200); };
+  const fallback = () => {
+    const ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch (_) {}
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(fallback);
+  else fallback();
+}
+$("j-export").addEventListener("click", exportJournal);
+$("j-clear").addEventListener("click", () => {
+  if (!getJournal().length) return;
+  if (confirm("Vider le journal (" + getJournal().length + " tours) ?")) { try { localStorage.removeItem("mw_journal"); } catch (_) {} renderJournal(); }
+});
 
 // ————————————————————— Déduction —————————————————————
 function extractJson(raw) {
@@ -303,6 +423,7 @@ async function deduce(raw, fromNotes) {
     if (!parsed || !parsed.candidats || !parsed.candidats.length) throw new Error("Réponse sans candidats");
     result = parsed;
     idx = 0;
+    logDeduction(clean, parsed);
     if (fromNotes) {
       notesReady = true; // résultat prêt, on reste déguisé jusqu'au geste
     } else {
@@ -341,6 +462,7 @@ function renderCycle() {
   if (hasQ) { const d = document.createElement("div"); d.className = "dot q" + (onQ ? " on" : ""); dots.appendChild(d); }
 }
 $("cycle-screen").addEventListener("click", (e) => {
+  if (holdFired) { holdFired = false; return; } // l'appui long a déjà consommé ce geste
   if (e.target.id === "cycle-close") {
     if (cameFromNotes) { show("notes-screen"); } else { $("words").value = ""; $("err").textContent = ""; show("input-screen"); }
     return;
@@ -351,6 +473,15 @@ $("cycle-screen").addEventListener("click", (e) => {
   else idx = Math.min(idx + 1, lastIdx);
   renderCycle();
 });
+// appui long sur le mot affiché : valider "c'était lui" dans le journal
+let holdTimer = null, holdFired = false;
+function cycleHoldStart() { holdTimer = setTimeout(() => { holdFired = true; validateCurrent(); }, 600); }
+function cycleHoldEnd() { clearTimeout(holdTimer); }
+$("cycle-center").addEventListener("touchstart", cycleHoldStart);
+$("cycle-center").addEventListener("touchend", cycleHoldEnd);
+$("cycle-center").addEventListener("touchmove", cycleHoldEnd);
+$("cycle-center").addEventListener("mousedown", cycleHoldStart);
+$("cycle-center").addEventListener("mouseup", cycleHoldEnd);
 
 // ————————————————————— Saisie clavier —————————————————————
 $("go").addEventListener("click", () => deduce($("words").value, false));
