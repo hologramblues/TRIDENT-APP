@@ -35,5 +35,6 @@ Après toute modification du prompt ou du parsing, vérifier ces trios de réfé
 - `verre image mammouth` → MIROIR (cat=verre par matière, préfixe M-I)
 - `océan spatule citadelle` → COUTEAU (cat=spatule, préfixe C-O)
 - `philosophe "sac à main" oiseau` → PORTEFEUILLE (cat=sac à main, préfixe P-O)
+- `flamant baguettes orange` → FOURCHETTE (cat=baguettes au sens ustensiles pour manger, préfixe F-O) — doit aussi marcher avec les variantes de dictée `flamand baguette orange`
 
 Et vérifier la stabilité : deux exécutions du même trio doivent donner la même liste.

@@ -42,6 +42,11 @@ Exemple canonique : `tourbillon marteau oui` → marteau = catégorie (outil), p
 8. **Priors de présentation renforcés** : mot long/obscur = probablement 1ère lettre, mot court = probablement 2ème lettre — net avantage au classement, jamais éliminatoire.
 9. **Balayage systématique** : pour chaque hypothèse vivante, TOUS les mots courants de la catégorie avec le préfixe, liste stable et reproductible (avec `temperature: 0`).
 10. **Homophones de dictée vocale** (2026-08-05) : les mots venant souvent d'une reconnaissance vocale, le modèle évalue aussi les variantes homophones plus concrètes/courantes (flamand→flamant, vers→verre...) et signale la substitution dans `alerte`. Le préfixe est généralement inchangé, c'est la catégorie qui bascule. [échec corrigé : "flamant" entendu "flamand", catégorie oiseau perdue]
+11. **Polysémie et pluriels** (2026-08-05) : pour chaque mot testé comme mot-catégorie, explorer TOUS ses sens courants (baguette = pain, baguettes chinoises, baguette magique...) au singulier comme au pluriel, sans s'ancrer sur le sens le plus fréquent. [échec corrigé : `flamant baguettes orange` → le modèle a lu baguette=pain, jamais exploré cat=baguettes (ustensiles) → FOURCHETTE manqué, BOUVREUIL proposé]
+
+## Note technique (2026-08-05)
+
+`temperature: 0` avec repli automatique (fonction `doCall` dans `callAPI`) avait disparu du fichier déployé — restauré le 2026-08-05. Symptôme observé : deux essais du même trio donnaient des résultats différents.
 
 ## Trios de test de référence
 
