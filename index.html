@@ -176,6 +176,8 @@ const DEDUCTION_PROMPT = `Tu es un moteur de déduction pour un jeu d'associatio
 
 Tu ne sais pas quel mot joue quel rôle. Ta mission : déduire le mot secret. Le mot secret n'est jamais IDENTIQUE à un des trois mots donnés — mais il peut fortement leur RESSEMBLER (mêmes premières lettres, sonorité proche) : c'est même fréquent et c'est un INDICE FAVORABLE, car le spectateur qui cherche "un mot commençant par la même lettre" part de son mot secret et pense souvent à un mot qui lui ressemble (qui pense TOURNEVIS donne volontiers "tourbillon"). Ne pénalise JAMAIS un candidat pour sa ressemblance avec un mot donné.
 
+ENTRÉE ISSUE DE DICTÉE VOCALE : les trois mots proviennent souvent d'une reconnaissance vocale, qui confond les homophones. Si un mot donné a un homophone ou quasi-homophone français plus concret ou plus courant (flamand→flamant, vers→verre, mère→mer, saut→seau, chant→champ...), évalue AUSSI les hypothèses avec cette variante, comme si elle avait été donnée. La variante ne change généralement pas le préfixe (mêmes premières lettres) ; elle change surtout la catégorie. Si un candidat de tête repose sur une variante corrigée, signale-le très brièvement dans "alerte" (ex : "lu flamant, pas flamand").
+
 MÉTHODE (raisonne en interne, étape par étape) :
 
 1. HYPOTHÈSES DE RÔLES : il existe 6 attributions possibles (3 choix de mot-catégorie × 2 ordres pour les lettres). ÉVALUE SÉRIEUSEMENT LES 6, mais PRIORISE-les avec ces indices forts, issus de la façon dont les mots ont été demandés au spectateur :

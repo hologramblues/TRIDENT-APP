@@ -41,6 +41,7 @@ Exemple canonique : `tourbillon marteau oui` → marteau = catégorie (outil), p
 7. **Proximité fine** pour classer dans une même hypothèse : tablette→téléphone avant tablette→télé. [échec corrigé : télé devant téléphone]
 8. **Priors de présentation renforcés** : mot long/obscur = probablement 1ère lettre, mot court = probablement 2ème lettre — net avantage au classement, jamais éliminatoire.
 9. **Balayage systématique** : pour chaque hypothèse vivante, TOUS les mots courants de la catégorie avec le préfixe, liste stable et reproductible (avec `temperature: 0`).
+10. **Homophones de dictée vocale** (2026-08-05) : les mots venant souvent d'une reconnaissance vocale, le modèle évalue aussi les variantes homophones plus concrètes/courantes (flamand→flamant, vers→verre...) et signale la substitution dans `alerte`. Le préfixe est généralement inchangé, c'est la catégorie qui bascule. [échec corrigé : "flamant" entendu "flamand", catégorie oiseau perdue]
 
 ## Trios de test de référence
 
