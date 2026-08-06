@@ -39,3 +39,5 @@ Après toute modification du prompt ou du parsing, vérifier ces trios de réfé
 - `flamant baguettes orange` → FOURCHETTE (cat=baguettes au sens ustensiles pour manger, préfixe F-O) — doit aussi marcher avec les variantes de dictée `flamand baguette orange`
 
 Et vérifier la stabilité : deux exécutions du même trio doivent donner la même liste.
+
+**Constat (2026-08-06)** : même à `temperature: 0`, l'API n'est pas déterministe à 100 % — les trios limites peuvent basculer d'une exécution à l'autre (observé : `verre image mammouth` → MIROIR ou VISON selon l'exécution, web comme natif, prompt identique). Un échec sur UNE exécution n'est donc pas concluant : rejouer 2-3 fois avant de conclure à une régression, et n'affiner le prompt que sur les échecs REPRODUCTIBLES.

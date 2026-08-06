@@ -45,6 +45,17 @@ Exemple canonique : `tourbillon marteau oui` → marteau = catégorie (outil), p
 10. **Homophones de dictée vocale** (2026-08-05) : les mots venant souvent d'une reconnaissance vocale, le modèle évalue aussi les variantes homophones plus concrètes/courantes (flamand→flamant, vers→verre...) et signale la substitution dans `alerte`. Le préfixe est généralement inchangé, c'est la catégorie qui bascule. [échec corrigé : "flamant" entendu "flamand", catégorie oiseau perdue]
 11. **Polysémie et pluriels** (2026-08-05) : pour chaque mot testé comme mot-catégorie, explorer TOUS ses sens courants (baguette = pain, baguettes chinoises, baguette magique...) au singulier comme au pluriel, sans s'ancrer sur le sens le plus fréquent. [échec corrigé : `flamant baguettes orange` → le modèle a lu baguette=pain, jamais exploré cat=baguettes (ustensiles) → FOURCHETTE manqué, BOUVREUIL proposé]
 
+## Constats de la campagne de tests app native (2026-08-06)
+
+Batterie rejouée dans l'app iOS (simulateur, prompt identique octet pour octet à la webapp) :
+
+- **Pas de divergence native/web** : les différences observées entre plateformes se sont révélées être de la variance API (cf. ci-dessous).
+- **`temperature: 0` ne garantit pas le déterminisme absolu** : `verre image mammouth` a donné VISON puis MIROIR sur deux exécutions natives identiques (la webapp donnait MIROIR). Les trios limites basculent. Conséquence : un échec isolé n'est pas une régression ; seuls les échecs reproductibles justifient un patch.
+- **Échec reproductible identifié** : `philosophe "sac à main" oiseau` → POCHETTE en tête (2/2 exécutions), PORTEFEUILLE relégué voire absent, SOCRATE (nom propre, pourtant interdit) apparu une fois. À traiter par patch ciblé, validé sur plusieurs exécutions.
+- `flamant baguettes orange` → BOA (1 exécution, non reclassifié flippant/reproductible).
+- Passent : `tourbillon marteau oui` → TOURNEVIS (rang 1), `océan spatule citadelle` → COUTEAU (rang 1).
+- Piste outillage : banc de test API (script rejouant la batterie N fois avec stats de rang par trio, clé fournie par variable d'environnement) avant tout prochain affinage du prompt.
+
 ## Note technique (2026-08-05)
 
 `temperature: 0` avec repli automatique (fonction `doCall` dans `callAPI`) avait disparu du fichier déployé — restauré le 2026-08-05. Symptôme observé : deux essais du même trio donnaient des résultats différents.
