@@ -53,6 +53,15 @@ Exemple canonique : `tourbillon marteau oui` → marteau = catégorie (outil), p
 
 Voir CLAUDE.md (tests de régression). Toujours les rejouer après un patch du prompt.
 
+## App iOS native (`ios/`, créée le 2026-08-06)
+
+Réplique SwiftUI exacte de la webapp, v1 complète : saisie + micro natif (SFSpeechRecognizer fr-FR, mêmes stopwords et logique "3 derniers mots"), cycle (mêmes gestes : tap, tiers gauche, appui long = validation journal), réglages (clé dans le **Keychain**), journal (même modèle et même format d'export), mode Notes déguisé (clair/sombre auto), URL scheme `trident://x?w=…` / `?mode=notes` / `?stealth=1` (mêmes noms de paramètres). Squelette CoreBluetooth PeekSmith présent mais jamais démarré en v1 (aucune popup Bluetooth). Keep-awake pendant le cycle (gain vs PWA). Nom affiché « Notes », icône sobre. Compte Apple gratuit : re-signer tous les 7 jours (Run dans Xcode), la veille de chaque prestation.
+
+- Projet généré par XcodeGen : `cd ios && xcodegen` (project.yml versionné, xcodeproj non).
+- **Le prompt Swift est injecté verbatim depuis index.html** par `ios/scripts/sync_prompt.py` (vérif : `--check`). index.html reste la source de vérité du prompt tant que les deux apps coexistent.
+- Harness de logique pure (parsing tolérant, nettoyage, tokenizer, routeur) : `ios/scripts/harness.swift`.
+- État au 2026-08-06 : phase A terminée (tout le code écrit, parse syntaxique OK, prompt et stopwords vérifiés octet pour octet). Phase B en attente d'installation d'Xcode : premier build, trios de régression, simulateur, iPhone réel. NB : les Command Line Tools seuls ont un bug de modulemap qui empêche `swiftc -typecheck` — vérifications complètes possibles uniquement avec Xcode.
+
 ## Roadmap
 
 - **Court terme** : retours de perfs réelles → nouveaux trios récalcitrants → patchs ciblés du prompt.

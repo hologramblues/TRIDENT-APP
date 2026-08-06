@@ -9,7 +9,8 @@
 
 ## Structure
 
-- `index.html` — TOUTE l'application (HTML + CSS + JS dans un seul fichier, c'est voulu : simple à déployer, pas de build). Ne pas introduire de bundler, de framework ou de fichiers séparés sans demande explicite.
+- `index.html` — TOUTE la webapp (HTML + CSS + JS dans un seul fichier, c'est voulu : simple à déployer, pas de build). Ne pas introduire de bundler, de framework ou de fichiers séparés sans demande explicite. **Source de vérité du prompt de déduction.**
+- `ios/` — app iOS native SwiftUI (réplique exacte de la webapp). Projet généré par XcodeGen (`cd ios && xcodegen`), voir `ios/README.md`. Le prompt Swift est injecté depuis index.html par `ios/scripts/sync_prompt.py` — **à relancer (puis vérifier avec `--check`) après chaque patch de DEDUCTION_PROMPT**. Harness de tests : `ios/scripts/harness.swift`.
 - `CLAUDE.md` — ce fichier.
 - `PROJET.md` — état du projet, fonctionnement du tour, logique de déduction, roadmap.
 

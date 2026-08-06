@@ -1,0 +1,8 @@
+# Généré par xcodegen — régénérable à volonté
+Trident.xcodeproj/
+Trident/Info.plist
+# Artefacts de build
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
