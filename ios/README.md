@@ -40,8 +40,10 @@ cd ios && python3 scripts/sync_prompt.py --check
 ```
 
 ```bash
-cd ios && xcrun swiftc -o /tmp/harness Trident/Models/DeductionResult.swift Trident/Services/DeductionService.swift Trident/Services/URLRouter.swift Trident/Services/SpeechTokenizer.swift scripts/harness.swift && /tmp/harness
+cd ios && cp scripts/harness.swift /tmp/main.swift && xcrun swiftc -o /tmp/harness Trident/Models/DeductionResult.swift Trident/Services/DeductionService.swift Trident/Services/URLRouter.swift Trident/Services/SpeechTokenizer.swift /tmp/main.swift && /tmp/harness
 ```
+
+(la copie en `main.swift` est nécessaire : Swift n'accepte les expressions top-level que dans un fichier de ce nom)
 
 `sync_prompt.py` (sans `--check`) réinjecte le prompt depuis `../index.html` — à relancer après chaque patch de `DEDUCTION_PROMPT` tant que la webapp reste la source de vérité.
 

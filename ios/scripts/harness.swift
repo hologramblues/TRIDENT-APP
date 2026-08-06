@@ -42,8 +42,10 @@ check("cleanInput : virgules et retours ligne", DeductionService.cleanInput(" oc
 check("cleanInput : espaces multiples", DeductionService.cleanInput("a   b\t c") == "a b c")
 
 // ————— SpeechTokenizer : 3 derniers mots pleins —————
+// NB : "oui" est un mot-outil dans la liste de la webapp — le micro le filtre
+// (quirk préexistant reproduit fidèlement ; le trio "…oui" se saisit au clavier).
 check("tokenizer : stopwords et ponctuation",
-      SpeechTokenizer.lastFullWords("alors le premier mot est tourbillon, ensuite marteau et enfin oui.") == "tourbillon marteau oui")
+      SpeechTokenizer.lastFullWords("alors le premier mot est tourbillon, ensuite marteau, puis citadelle.") == "tourbillon marteau citadelle")
 check("tokenizer : mots d'une lettre ignorés",
       SpeechTokenizer.lastFullWords("a verre image mammouth") == "verre image mammouth")
 
