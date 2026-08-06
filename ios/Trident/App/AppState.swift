@@ -1,7 +1,7 @@
 import SwiftUI
 import Combine
 
-enum Screen { case settings, input, loading, cycle, notes }
+enum Screen: Equatable { case settings, input, loading, cycle, notes }
 
 /// État global de l'app — équivalent des variables globales + show(id) de la webapp.
 /// Toute la chorégraphie des écrans (déduction, cycle, mode Notes, réglages) vit ici ;
