@@ -15,7 +15,6 @@ struct NotesView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var scheme
     @FocusState private var focused: Bool
-    @State private var revealOpacity: Double = 1
 
     private var dark: Bool { scheme == .dark }
     /// Gris de la date Apple Notes — utilisé aussi pour la révélation (camouflage parfait).
@@ -61,6 +60,10 @@ struct NotesView: View {
                     .font(.system(size: 12))
                     .foregroundColor(grayText)
                     .padding(.top, 10)
+                    .padding(.horizontal, 40)
+                    .contentShape(Rectangle())
+                    // tour terminé : un tap sur la date remet tout à zéro pour le spectateur suivant
+                    .onTapGesture { app.notesReset() }
 
                 TextEditor(text: $app.noteText)
                     .font(.system(size: 17))
@@ -103,7 +106,6 @@ struct NotesView: View {
                 }
                 .font(.system(size: 15))
                 .foregroundColor(grayText)
-                .opacity(revealOpacity)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 14)
             }
@@ -117,11 +119,8 @@ struct NotesView: View {
                 .gesture(
                     LongPressGesture(minimumDuration: 0.6)
                         .onEnded { _ in
-                            app.validateCurrent() // "c'était lui" → journal
-                            withAnimation(.easeInOut(duration: 0.2)) { revealOpacity = 0.25 }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                                withAnimation(.easeInOut(duration: 0.2)) { revealOpacity = 1 }
-                            }
+                            // "c'était lui" : journal ✓ + la note devient la prédiction
+                            app.notesPredict()
                         }
                         .exclusively(before: SpatialTapGesture(count: 2)
                             .onEnded { _ in app.notesHide() }

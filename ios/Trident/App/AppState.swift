@@ -124,6 +124,28 @@ final class AppState: ObservableObject {
         notesRevealed = false
     }
 
+    /// Appui long sur le candidat révélé : validation ✓ au journal + la note entière
+    /// devient ce mot — l'app affiche alors une "prédiction" écrite à l'avance.
+    func notesPredict() {
+        guard let result, idx < result.candidats.count else { return }
+        validateCurrent()
+        let mot = result.candidats[idx].mot
+        noteText = mot.prefix(1).uppercased() + mot.dropFirst()
+        notesRevealed = false
+    }
+
+    /// Tap sur la ligne de date : remise à zéro complète pour le spectateur suivant
+    /// (note vide, résultat effacé, l'heure retrouve son ":").
+    func notesReset() {
+        noteText = ""
+        result = nil
+        idx = 0
+        currentWords = ""
+        notesReady = false
+        notesRevealed = false
+        notesError = ""
+    }
+
     func notesBack() {
         errorMessage = ""
         screen = .input
