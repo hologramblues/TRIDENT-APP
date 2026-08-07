@@ -18,7 +18,8 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1" # iPhone uniquement
         SWIFT_VERSION: "5.9"
-        CODE_SIGN_STYLE: Automatic # équipe personnelle à choisir une fois dans Xcode → Signing
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: FJCD5D8B6W # équipe personnelle (identifiant public, pas un secret) — survit aux régénérations xcodegen
         GENERATE_INFOPLIST_FILE: NO
     info:
       path: Trident/Info.plist # généré par xcodegen, non versionné
