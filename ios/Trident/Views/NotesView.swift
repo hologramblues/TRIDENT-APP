@@ -35,13 +35,13 @@ struct NotesView: View {
             VStack(spacing: 0) {
                 // ————— Barre "‹ Notes" / "OK" —————
                 HStack {
+                    // décoratif : fait partie du costume Apple Notes, ne mène nulle part
+                    // (réglages = glissement à deux doigts vers le bas)
                     HStack(spacing: 4) {
                         Text("‹").font(.system(size: 24)).padding(.top, -2)
                         Text("Notes").font(.system(size: 17))
                     }
                     .foregroundColor(Theme.notesYellow)
-                    .contentShape(Rectangle())
-                    .onTapGesture { app.notesBack() }
                     Spacer()
                     Text("OK")
                         .font(.system(size: 17, weight: .semibold))
@@ -92,7 +92,7 @@ struct NotesView: View {
         )
     }
 
-    // ————— Révélation : le candidat en gris discret, en bas de la note —————
+    // ————— Révélation : le candidat (ou l'erreur) en gris discret, en bas de la note —————
     private var revealBar: some View {
         Group {
             if let result = app.result {
@@ -104,12 +104,14 @@ struct NotesView: View {
                         Text("\(cur.mot)  \(app.idx + 1)/\(result.candidats.count)")
                     }
                 }
-                .font(.system(size: 15))
-                .foregroundColor(grayText)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 14)
+            } else if !app.notesError.isEmpty {
+                Text(app.notesError)
             }
         }
+        .font(.system(size: 15))
+        .foregroundColor(grayText)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 14)
     }
 
     private var revealGestureLayer: some View {

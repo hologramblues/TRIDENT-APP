@@ -6,6 +6,15 @@ struct RootView: View {
     var body: some View {
         content
             .onChange(of: app.screen, perform: updateIdleTimer)
+            // glissement à deux doigts vers le bas : Notes ↔ Réglages (le black mode
+            // n'est plus dans la navigation, les réglages passent par ce geste)
+            .background(TwoFingerSwipeCatcher {
+                switch app.screen {
+                case .notes: app.openSettings()
+                case .settings: app.screen = .notes
+                default: break
+                }
+            })
     }
 
     /// Keep-awake : l'écran ne doit JAMAIS se verrouiller pendant le tour

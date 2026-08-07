@@ -95,8 +95,10 @@ final class AppState: ObservableObject {
     }
 
     func cycleClose() {
-        if cameFromNotes { screen = .notes }
-        else { inputText = ""; errorMessage = ""; screen = .input }
+        // le black mode n'est plus dans la navigation : ✕ ramène toujours au déguisement
+        inputText = ""
+        errorMessage = ""
+        screen = .notes
     }
 
     /// Appui long sur le mot affiché : "c'était lui" — pas de validation sur l'écran question.
@@ -113,11 +115,10 @@ final class AppState: ObservableObject {
         Task { await deduce(noteText, fromNotes: true) }
     }
 
-    /// Appui long dans la note : révèle le candidat en gris discret en bas
-    /// (plus de bascule vers l'écran cycle — le cycle plein écran vit dans le black mode).
+    /// Appui long dans la note : révèle le candidat en gris discret en bas.
+    /// En cas d'erreur de déduction, c'est l'erreur qui s'affiche au même endroit.
     func notesLongPress() {
-        if notesReady, result != nil { notesRevealed = true }
-        else if !notesError.isEmpty { errorMessage = notesError; screen = .input }
+        if (notesReady && result != nil) || !notesError.isEmpty { notesRevealed = true }
     }
 
     func notesHide() {
@@ -144,11 +145,6 @@ final class AppState: ObservableObject {
         notesReady = false
         notesRevealed = false
         notesError = ""
-    }
-
-    func notesBack() {
-        errorMessage = ""
-        screen = .input
     }
 
     // ————— Réglages —————
