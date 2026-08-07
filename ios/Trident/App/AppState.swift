@@ -48,7 +48,10 @@ final class AppState: ObservableObject {
         case .notes:
             screen = .notes
         case .input:
-            screen = .input
+            // Divergence voulue avec la webapp (choix Jérémie 2026-08-06) : l'app native
+            // démarre sur le déguisement Notes — cohérent avec le nom "Notes" de l'icône.
+            // Le black mode (saisie MASTER WORD) reste accessible par "‹ Notes".
+            screen = .notes
         }
     }
 
@@ -128,6 +131,6 @@ final class AppState: ObservableObject {
         let k = apiKeyField.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !k.isEmpty else { return }
         KeychainStore.setKey(k)
-        screen = .input
+        screen = .notes // retour au déguisement par défaut
     }
 }
