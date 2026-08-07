@@ -14,6 +14,7 @@ final class AppState: ObservableObject {
     @Published var currentWords = ""
     @Published var cameFromNotes = false
     @Published var notesReady = false
+    @Published var notesRevealed = false // candidat affiché en bas de la fausse note
     @Published var notesError = ""
     @Published var errorMessage = ""
     @Published var inputText = ""
@@ -107,13 +108,20 @@ final class AppState: ObservableObject {
     // ————— Mode Notes —————
     func notesOK() {
         notesReady = false
+        notesRevealed = false
         notesError = ""
         Task { await deduce(noteText, fromNotes: true) }
     }
 
+    /// Appui long dans la note : révèle le candidat en gris discret en bas
+    /// (plus de bascule vers l'écran cycle — le cycle plein écran vit dans le black mode).
     func notesLongPress() {
-        if notesReady, result != nil { screen = .cycle }
+        if notesReady, result != nil { notesRevealed = true }
         else if !notesError.isEmpty { errorMessage = notesError; screen = .input }
+    }
+
+    func notesHide() {
+        notesRevealed = false
     }
 
     func notesBack() {

@@ -1,66 +1,132 @@
 import SwiftUI
 
 /// Mode Notes déguisé — réplique d'Apple Notes, clair/sombre AUTO (suit le système,
-/// c'est pour ça qu'aucun .preferredColorScheme n'est forcé ici). « OK » lance la
-/// déduction en silence, l'écran ne bouge pas ; appui long 0,6 s n'importe où bascule
-/// sur le cycle quand le résultat est prêt. « ‹ Notes » revient à l'écran normal.
+/// c'est pour ça qu'aucun .preferredColorScheme n'est forcé ici).
+///
+/// Chorégraphie scène (tout se passe dans la fausse note, l'écran ne change jamais) :
+/// - « OK » lance la déduction en silence.
+/// - Signal discret « résultat prêt » : le ":" de l'heure devient "." (17:35 → 17.35).
+/// - Appui long n'importe où : le candidat s'affiche en gris discret en bas
+///   (même couleur que la date, il se fond dans l'interface).
+/// - Une fois révélé : tap = mot suivant, tiers gauche = précédent,
+///   appui long = valider ✓ dans le journal (bref clignotement), double tap = cacher.
+/// - « ‹ Notes » mène au black mode (saisie MASTER WORD).
 struct NotesView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var scheme
     @FocusState private var focused: Bool
+    @State private var revealOpacity: Double = 1
 
     private var dark: Bool { scheme == .dark }
+    /// Gris de la date Apple Notes — utilisé aussi pour la révélation (camouflage parfait).
+    private var grayText: Color { dark ? Color(hex: 0x8E8E93) : Color(hex: 0x6D6D72) }
+
     private var dateText: String {
         let f = DateFormatter()
         f.locale = Locale(identifier: "fr_FR")
         f.dateFormat = "d MMMM yyyy 'à' HH:mm"
-        return f.string(from: Date())
+        var s = f.string(from: Date())
+        // signal discret : résultat prêt → le ":" de l'heure devient "."
+        if app.notesReady { s = s.replacingOccurrences(of: ":", with: ".") }
+        return s
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // ————— Barre "‹ Notes" / "OK" —————
-            HStack {
-                HStack(spacing: 4) {
-                    Text("‹").font(.system(size: 24)).padding(.top, -2)
-                    Text("Notes").font(.system(size: 17))
-                }
-                .foregroundColor(Theme.notesYellow)
-                .contentShape(Rectangle())
-                .onTapGesture { app.notesBack() }
-                Spacer()
-                Text("OK")
-                    .font(.system(size: 17, weight: .semibold))
+        ZStack {
+            VStack(spacing: 0) {
+                // ————— Barre "‹ Notes" / "OK" —————
+                HStack {
+                    HStack(spacing: 4) {
+                        Text("‹").font(.system(size: 24)).padding(.top, -2)
+                        Text("Notes").font(.system(size: 17))
+                    }
                     .foregroundColor(Theme.notesYellow)
                     .contentShape(Rectangle())
-                    .onTapGesture {
-                        focused = false
-                        app.notesOK()
-                    }
+                    .onTapGesture { app.notesBack() }
+                    Spacer()
+                    Text("OK")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(Theme.notesYellow)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            focused = false
+                            app.notesOK()
+                        }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(dark ? Color(hex: 0x141414).opacity(0.94) : Color(hex: 0xF9F9F9).opacity(0.94))
+
+                Text(dateText)
+                    .font(.system(size: 12))
+                    .foregroundColor(grayText)
+                    .padding(.top, 10)
+
+                TextEditor(text: $app.noteText)
+                    .font(.system(size: 17))
+                    .lineSpacing(4)
+                    .foregroundColor(dark ? .white : Color(hex: 0x1C1C1E))
+                    .scrollContentBackground(.hidden)
+                    .focused($focused)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 4)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(dark ? Color(hex: 0x141414).opacity(0.94) : Color(hex: 0xF9F9F9).opacity(0.94))
 
-            Text(dateText)
-                .font(.system(size: 12))
-                .foregroundColor(dark ? Color(hex: 0x8E8E93) : Color(hex: 0x6D6D72))
-                .padding(.top, 10)
-
-            TextEditor(text: $app.noteText)
-                .font(.system(size: 17))
-                .lineSpacing(4)
-                .foregroundColor(dark ? .white : Color(hex: 0x1C1C1E))
-                .scrollContentBackground(.hidden)
-                .focused($focused)
-                .padding(.horizontal, 14)
-                .padding(.top, 4)
+            // ————— Couche de gestes pendant la révélation (bloque l'édition, invisible) —————
+            if app.notesRevealed { revealGestureLayer }
         }
         .background((dark ? Color.black : Color.white).ignoresSafeArea())
-        // appui long n'importe où : révèle le cycle quand c'est prêt
+        .overlay(alignment: .bottomLeading) {
+            if app.notesRevealed { revealBar }
+        }
+        // appui long n'importe où : révèle le candidat quand le résultat est prêt
         // (.simultaneousGesture pour ne pas casser l'édition du TextEditor)
         .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.6).onEnded { _ in app.notesLongPress() }
+            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
+                focused = false
+                app.notesLongPress()
+            }
         )
+    }
+
+    // ————— Révélation : le candidat en gris discret, en bas de la note —————
+    private var revealBar: some View {
+        Group {
+            if let result = app.result {
+                Group {
+                    if app.onQuestion {
+                        Text(result.question ?? "")
+                    } else {
+                        let cur = result.candidats[app.idx]
+                        Text("\(cur.mot)  \(app.idx + 1)/\(result.candidats.count)")
+                    }
+                }
+                .font(.system(size: 15))
+                .foregroundColor(grayText)
+                .opacity(revealOpacity)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 14)
+            }
+        }
+    }
+
+    private var revealGestureLayer: some View {
+        GeometryReader { geo in
+            Color.black.opacity(0.001) // capte les gestes sans rien montrer
+                .ignoresSafeArea()
+                .gesture(
+                    LongPressGesture(minimumDuration: 0.6)
+                        .onEnded { _ in
+                            app.validateCurrent() // "c'était lui" → journal
+                            withAnimation(.easeInOut(duration: 0.2)) { revealOpacity = 0.25 }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                                withAnimation(.easeInOut(duration: 0.2)) { revealOpacity = 1 }
+                            }
+                        }
+                        .exclusively(before: SpatialTapGesture(count: 2)
+                            .onEnded { _ in app.notesHide() }
+                            .exclusively(before: SpatialTapGesture()
+                                .onEnded { v in app.cycleTap(atX: v.location.x, width: geo.size.width) })))
+        }
     }
 }
