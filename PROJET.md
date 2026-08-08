@@ -31,6 +31,7 @@ L'app iOS est devenue le **hub unique** des outils de scène :
 - **Entrée de l'app : faux écran de verrouillage iOS** (« Saisissez le code », secousse si code inconnu). Code `111111` → hub ; code `222222` → faux Notes (Trident). Codes modifiables dans RÉGLAGES, persistants. Les URL `?w=`/`stealth`/`mode=notes` court-circuitent le verrou (apps de capture).
 - **Trident reste 100 % natif** : tuile « Trident » sur l'accueil du hub → faux Notes ; retour par RÉGLAGES → bouton HUB.
 - **PeekSmith réel** (UUIDs du brief hub) : scan par nom `PeekSmith`, HM-10 `FFE0`/`FFE1` + service alternatif, boutons `isb0/1/2` → 0=passer 1=OUI 2=NON, service partagé hub/Trident, instancié seulement au premier `psConnect` (pas de popup Bluetooth au lancement).
+- **DOB phase 2 — année en faux code** (2026-08-08) : après la date trouvée, bouton ANNÉE sur l'écran peek → faux « Enter Passcode ». L'année de naissance tapée nonchalamment comme un code (+ 2 chiffres de bourrage, ex. 198200) révèle sous les points, en gris discret : jour de la semaine de naissance + jours écoulés depuis (vérifiable par Siri). Glissement 1 doigt bas = retour au peek.
 - À tester sur iPhone réel : fallback vocal du hub (transcript via pont), CORS du fetch API du hub depuis `file://` (repli prévu : cmd de pont), clavier dans les panels du hub, PeekSmith avec le matériel.
 
 ## Écrans et modes
