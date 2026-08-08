@@ -6,11 +6,12 @@ struct RootView: View {
     var body: some View {
         content
             .onChange(of: app.screen, perform: updateIdleTimer)
-            // glissement à trois doigts vers le bas : Notes ↔ Réglages (le black mode
-            // n'est plus dans la navigation, les réglages passent par ce geste)
-            .background(TwoFingerSwipeCatcher {
+            // triple tap : Notes ↔ Réglages (le black mode n'est plus dans la
+            // navigation, les réglages passent par ce geste). Inactif pendant la
+            // révélation, où le tap simple navigue entre les candidats.
+            .background(SettingsGestureCatcher {
                 switch app.screen {
-                case .notes: app.openSettings()
+                case .notes: if !app.notesRevealed { app.openSettings() }
                 case .settings: app.screen = .notes
                 default: break
                 }
