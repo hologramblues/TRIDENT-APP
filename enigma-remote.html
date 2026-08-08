@@ -102,6 +102,8 @@
   .pc-digits{display:none;margin-top:14px;font-family:ui-monospace,monospace;
     font-size:22px;letter-spacing:.45em;color:var(--amber);min-height:26px}
   .guide .pc-digits{display:block}
+  /* révélation année DOB : lisible en performance (convention gris discret du hub) */
+  .pc-digits.reveal{display:block;color:#3a372e;letter-spacing:.18em}
 
   /* passcode */
   .pc-head{margin-top:16vh;text-align:center}
@@ -430,6 +432,7 @@
   <div class="pk-bar">
     <b id="pkRestart">&#10226;</b>
     <b id="pkConv">?&nbsp;QUESTIONS</b>
+    <b id="pkYear" style="display:none">ANN&Eacute;E</b>
     <b id="pkFallback">FALLBACK</b>
   </div>
 </div>
@@ -706,11 +709,12 @@ $$("[data-go]").forEach(el=>el.addEventListener("click",()=>{
 
 /* ---------- grille catégories ---------- */
 function openGrid(){
+  $("#pkYear").style.display="none";
   const c=$("#grid .cats");
   c.innerHTML = CAT_ORDER.filter(k=>store.lists[k]!==undefined||DEFAULT_LISTS[k])
     .map(k=>`<div class="cat" data-cat="${k}">${k}<br>(French)</div>`).join("");
   $$("#grid .cat").forEach(t=>t.onclick=()=>{
-    S.category=t.dataset.cat; S.seq=[]; S.digits=[]; S.shape=0;
+    S.category=t.dataset.cat; S.seq=[]; S.digits=[]; S.shape=0; S.pcMode="enigma";
     updBin();
     buzz(15);
     if(S.perfMode==="binary"){ show("binary"); } else { updPcDots(); show("passcode"); }
@@ -744,11 +748,16 @@ $("#zS3").onclick=()=>{ if(S.effect==="pin"){pinShape(3);} else {S.shape=3;buzz(
 /* ---------- saisie code (remote tape les chiffres, écran noir) ---------- */
 function pcInput(n){
   S.digits.push(n); buzz(12); updPcDots();
-  if(S.digits.length===6){ setTimeout(computePeek,150); }
+  if(S.digits.length===6){
+    if(S.pcMode==="dobyear") dobYearReveal();
+    else setTimeout(computePeek,150);
+  }
 }
 function updPcDots(){
   $$("#pcDots i").forEach((d,i)=>d.classList.toggle("f", i<S.digits.length));
-  $("#pcDigits").textContent = S.digits.join("");
+  const pd=$("#pcDigits");
+  pd.classList.remove("reveal");
+  pd.textContent = S.digits.join("");
 }
 $$("#pad b[data-n]").forEach(b=>b.onclick=e=>{ e.stopPropagation(); pcInput(+b.dataset.n); });
 $("#padDel").onclick=e=>{ e.stopPropagation(); S.digits.pop(); updPcDots(); buzz([10,40,10]); };
@@ -761,7 +770,8 @@ $("#peek").addEventListener("click",e=>{
 
 /* ---------- recommencer & fallback ---------- */
 function restart(){
-  S.seq=[]; S.digits=[]; S.shape=0; S.pin=[]; updBin(); updPcDots(); buzz(20);
+  S.seq=[]; S.digits=[]; S.shape=0; S.pin=[]; S.pcMode=null; updBin(); updPcDots(); buzz(20);
+  $("#pkYear").style.display="none";
   if(S.effect==="prenoms"){ show("binary"); }
   else if(S.effect==="pin"){ startPin(); }
   else if(S.effect==="anagram"){ openAnagGrid(); }
@@ -1315,6 +1325,7 @@ function findExitHook(filtered,hooks){
 let ANAG={listKey:null,list:null,hookIdx:0,eliminated:[]};
 
 function openAnagGrid(){
+  $("#pkYear").style.display="none";
   S.effect="anagram";
   const a=store.anag;
   const c=$("#grid .cats");
@@ -1457,6 +1468,7 @@ function dobDates(sign){
 let DOB=null;
 function openDobGrid(){
   S.effect="dob"; DOB={};
+  $("#pkYear").style.display="none";
   const c=$("#grid .cats");
   c.innerHTML = Object.keys(ZR).map(k=>`<div class="cat" data-dob="${k}">${k}</div>`).join("")
     + `<div class="cat" data-dobanag="1" style="color:#8fbf8f">via<br>ANAGRAMMES</div>`;
@@ -1503,13 +1515,37 @@ function dobConverge(cands){
 }
 function dobResult(label){
   CV=null;
+  DOB=DOB||{}; DOB.day=dayOf(label); DOB.month=monthOf(label);
   S.results=[label]; S.crib={[label[0]]:true};
   renderPeek(); show("peek");
   $("#peek").classList.toggle("show", !!store.opts.guide);
+  $("#pkYear").style.display=""; // débloque la phase année (faux code)
   psSend("= "+label);
 }
 $$("#dsKeys b").forEach(b=>b.onclick=()=>dobSum(+b.dataset.d));
 $("#dsHint").onclick=()=>{ if(DOB&&DOB.stage===2&&DOB.c1) dobConverge(DOB.c1); };
+
+/* ---------- DOB phase 2 : l'année tapée comme un code ----------
+   Après la date trouvée, on demande nonchalamment l'année de naissance et on la
+   tape sur le faux écran de code (année + 2 chiffres de bourrage, ex. 198200).
+   Au 6e chiffre : jour de la semaine de naissance + jours écoulés, en gris
+   discret sous les points — vérifiable par Siri. */
+function openDobYear(){
+  S.pcMode="dobyear"; S.digits=[]; updPcDots(); buzz(15);
+  show("passcode");
+}
+function dobYearReveal(){
+  const y=parseInt(S.digits.slice(0,4).join(""),10);
+  if(!DOB||!DOB.day||!DOB.month||y<1900||y>2099) return;
+  const bd=new Date(y, DOB.month-1, DOB.day);
+  const J=["DIMANCHE","LUNDI","MARDI","MERCREDI","JEUDI","VENDREDI","SAMEDI"];
+  const nb=Math.floor((Date.now()-bd.getTime())/864e5);
+  const pd=$("#pcDigits");
+  pd.textContent=J[bd.getDay()]+" · "+nb.toLocaleString("fr-FR")+" JOURS";
+  pd.classList.add("reveal");
+  buzz(40);
+}
+$("#pkYear").onclick=openDobYear;
 /* questions thématiques (saveur numérologie) — choix par minimax exact */
 const DAY_FEATS=[
   {k:"1chiffre", t:"Le jour tient en un seul chiffre ?", f:d=>d<10},
@@ -1823,7 +1859,8 @@ document.addEventListener("touchend",e=>{
   }
   // 1 doigt vers le bas = section précédente
   if(t0.n===1 && dy>80 && Math.abs(dx)<50){
-    if(S.screen==="binary"||S.screen==="passcode"){ S.effect==="enigma" ? openGrid() : show("home"); }
+    if(S.screen==="passcode"&&S.pcMode==="dobyear"){ show("peek"); }
+    else if(S.screen==="binary"||S.screen==="passcode"){ S.effect==="enigma" ? openGrid() : show("home"); }
     else if(S.screen==="shape"){ S.effect==="pin" ? show("home") : show("binary"); }
     else if(S.screen==="converge"){
       if(CV&&CV.mode==="digit") pinNextSlot();
