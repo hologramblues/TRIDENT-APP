@@ -1,10 +1,10 @@
 import SwiftUI
 import UIKit
 
-/// Geste discret d'accès aux réglages : glissement à DEUX doigts vers le bas,
-/// n'importe où dans l'app. SwiftUI ne sait pas faire de pan multi-doigts,
-/// on attache donc un UIPanGestureRecognizer à la fenêtre (sans perturber
-/// l'édition : cancelsTouchesInView = false).
+/// Geste discret d'accès aux réglages : glissement à TROIS doigts vers le bas,
+/// n'importe où dans l'app (deux doigts faisaient défiler la note). SwiftUI ne
+/// sait pas faire de pan multi-doigts, on attache donc un UIPanGestureRecognizer
+/// à la fenêtre (sans perturber l'édition : cancelsTouchesInView = false).
 struct TwoFingerSwipeCatcher: UIViewRepresentable {
     var onSwipeDown: () -> Void
 
@@ -30,8 +30,8 @@ struct TwoFingerSwipeCatcher: UIViewRepresentable {
             super.didMoveToWindow()
             guard let window, let coordinator, coordinator.recognizer == nil else { return }
             let pan = UIPanGestureRecognizer(target: coordinator, action: #selector(Coordinator.handle(_:)))
-            pan.minimumNumberOfTouches = 2
-            pan.maximumNumberOfTouches = 2
+            pan.minimumNumberOfTouches = 3
+            pan.maximumNumberOfTouches = 3
             pan.cancelsTouchesInView = false
             window.addGestureRecognizer(pan)
             coordinator.recognizer = pan
