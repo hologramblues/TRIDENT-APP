@@ -23,6 +23,16 @@ Exemple canonique : `tourbillon marteau oui` → marteau = catégorie (outil), p
 - **Clé API** : uniquement dans le localStorage de l'appareil (écran RÉGLAGES, appui long sur "MASTER WORD"). Jamais dans le repo.
 - **Le prompt `DEDUCTION_PROMPT`** demande un raisonnement bref puis un bloc JSON final `{candidats: [{mot, categorie, score}], alerte, question}`. Parsing tolérant (extraction du dernier bloc JSON) + appel de rattrapage si la réponse est tronquée.
 
+## Fusion Hub + Trident (2026-08-08)
+
+L'app iOS est devenue le **hub unique** des outils de scène :
+
+- `enigma-remote.html` (racine du repo, source de vérité unique) : webapp autonome multi-effets (Enigma, Prénoms, PIN, Anagrammes, Date de naissance, Converge, fallback vocal, PeekSmith), embarquée dans l'app en ressource et affichée dans une **WKWebView persistante** (l'état du hub survit aux allers-retours). Pont natif `hub` (voir `CLAUDE-HUB-INTEGRATION.md`) : haptique, openURL, PeekSmith BLE, reconnaissance vocale (transcript brut cumulé), et `openTrident`.
+- **Entrée de l'app : faux écran de verrouillage iOS** (« Saisissez le code », secousse si code inconnu). Code `111111` → hub ; code `222222` → faux Notes (Trident). Codes modifiables dans RÉGLAGES, persistants. Les URL `?w=`/`stealth`/`mode=notes` court-circuitent le verrou (apps de capture).
+- **Trident reste 100 % natif** : tuile « Trident » sur l'accueil du hub → faux Notes ; retour par RÉGLAGES → bouton HUB.
+- **PeekSmith réel** (UUIDs du brief hub) : scan par nom `PeekSmith`, HM-10 `FFE0`/`FFE1` + service alternatif, boutons `isb0/1/2` → 0=passer 1=OUI 2=NON, service partagé hub/Trident, instancié seulement au premier `psConnect` (pas de popup Bluetooth au lancement).
+- À tester sur iPhone réel : fallback vocal du hub (transcript via pont), CORS du fetch API du hub depuis `file://` (repli prévu : cmd de pont), clavier dans les panels du hub, PeekSmith avec le matériel.
+
 ## Écrans et modes
 
 - **Saisie** (défaut) : champ unique pour les trois mots + bouton ● (reconnaissance vocale fr-FR, garde les 3 derniers mots pleins hors mots-outils, pour capter les mots en répétant naturellement ceux du spectateur).

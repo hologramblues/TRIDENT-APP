@@ -7,6 +7,8 @@ struct SettingsView: View {
     @State private var confirmClear = false
     @State private var antedateValue = ""
     @State private var antedateHours = false
+    @State private var codeHub = ""
+    @State private var codeNotes = ""
 
     var body: some View {
         ZStack {
@@ -47,6 +49,30 @@ struct SettingsView: View {
                         .foregroundColor(Theme.dim)
                         .lineSpacing(4)
                         .padding(.top, 16)
+
+                    // ————— Accès au hub (REMOTE HUB, webview) —————
+                    Button { app.screen = .hub } label: {
+                        Text("HUB")
+                            .font(Theme.mono(13))
+                            .tracking(4)
+                            .foregroundColor(Theme.dim)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .overlay(Rectangle().stroke(Theme.dim, lineWidth: 1))
+                    }
+                    .padding(.top, 24)
+
+                    // ————— Codes du faux écran de verrouillage —————
+                    Text("CODES DE VERROUILLAGE")
+                        .font(Theme.mono(11))
+                        .tracking(4)
+                        .foregroundColor(Theme.dim)
+                        .padding(.top, 44)
+                        .padding(.bottom, 6)
+
+                    codeField("code → hub", $codeHub)
+                    codeField("code → notes", $codeNotes)
+                        .padding(.top, 8)
 
                     // ————— Antidatage de la prédiction —————
                     Text("PRÉDICTION ANTIDATÉE DE")
@@ -127,7 +153,26 @@ struct SettingsView: View {
             let m = app.antedateMinutes
             if m >= 60 && m % 60 == 0 { antedateHours = true; antedateValue = "\(m / 60)" }
             else { antedateHours = false; antedateValue = "\(m)" }
+            codeHub = app.lockCodeHub
+            codeNotes = app.lockCodeNotes
         }
+        // un code n'est enregistré que s'il fait exactement 6 chiffres
+        .onChange(of: codeHub) { v in
+            if v.count == 6, v.allSatisfy(\.isNumber), v != app.lockCodeNotes { app.lockCodeHub = v }
+        }
+        .onChange(of: codeNotes) { v in
+            if v.count == 6, v.allSatisfy(\.isNumber), v != app.lockCodeHub { app.lockCodeNotes = v }
+        }
+    }
+
+    private func codeField(_ placeholder: String, _ binding: Binding<String>) -> some View {
+        TextField(placeholder, text: binding)
+            .keyboardType(.numberPad)
+            .font(Theme.mono(14))
+            .foregroundColor(Theme.bright)
+            .tint(Theme.ember)
+            .padding(.vertical, 10)
+            .overlay(Rectangle().frame(height: 1).foregroundColor(Theme.dim), alignment: .bottom)
     }
 
     private func pushAntedate() {

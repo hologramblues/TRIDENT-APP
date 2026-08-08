@@ -10,7 +10,11 @@ targets:
   Trident:
     type: application
     platform: iOS
-    sources: [Trident]
+    sources:
+      - Trident
+      # le hub (webapp autonome) embarqué en ressource — source de vérité à la racine du repo
+      - path: ../enigma-remote.html
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jeremiegalan.trident

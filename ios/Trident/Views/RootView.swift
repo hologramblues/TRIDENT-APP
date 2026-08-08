@@ -16,9 +16,9 @@ struct RootView: View {
     }
 
     /// Keep-awake : l'écran ne doit JAMAIS se verrouiller pendant le tour
-    /// (cycle, chargement, ou Notes en attente de révélation). Gain vs la PWA.
+    /// (cycle, chargement, Notes en attente, ou hub en performance). Gain vs la PWA.
     private func updateIdleTimer(_ s: Screen) {
-        let keepAwake = s == .cycle || s == .loading || s == .notes
+        let keepAwake = s == .cycle || s == .loading || s == .notes || s == .hub
         UIApplication.shared.isIdleTimerDisabled = keepAwake
     }
 
@@ -26,6 +26,8 @@ struct RootView: View {
     // qui faisait dépasser le budget du type-checker.
     private var content: AnyView {
         switch app.screen {
+        case .lock: return AnyView(LockView())
+        case .hub: return AnyView(HubView(app: app).ignoresSafeArea()) // le HTML gère les safe areas
         case .settings: return AnyView(SettingsView())
         case .input: return AnyView(InputView())
         case .loading: return AnyView(LoadingView())

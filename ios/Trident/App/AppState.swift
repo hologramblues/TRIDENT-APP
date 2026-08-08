@@ -1,7 +1,7 @@
 import SwiftUI
 import Combine
 
-enum Screen: Equatable { case settings, input, loading, cycle, notes }
+enum Screen: Equatable { case lock, hub, settings, input, loading, cycle, notes }
 
 /// État global de l'app — équivalent des variables globales + show(id) de la webapp.
 /// Toute la chorégraphie des écrans (déduction, cycle, mode Notes, réglages) vit ici ;
@@ -21,6 +21,13 @@ final class AppState: ObservableObject {
     @Published var antedateMinutes: Int {
         didSet { UserDefaults.standard.set(antedateMinutes, forKey: "mw_antedate_min") }
     }
+    /// Codes du faux écran de verrouillage (réglables dans RÉGLAGES, persistants).
+    @Published var lockCodeHub: String {
+        didSet { UserDefaults.standard.set(lockCodeHub, forKey: "mw_code_hub") }
+    }
+    @Published var lockCodeNotes: String {
+        didSet { UserDefaults.standard.set(lockCodeNotes, forKey: "mw_code_notes") }
+    }
     @Published var errorMessage = ""
     @Published var inputText = ""
     @Published var noteText = ""
@@ -34,6 +41,8 @@ final class AppState: ObservableObject {
     init() {
         let sauve = UserDefaults.standard.integer(forKey: "mw_antedate_min")
         antedateMinutes = sauve > 0 ? sauve : 5
+        lockCodeHub = UserDefaults.standard.string(forKey: "mw_code_hub") ?? "111111"
+        lockCodeNotes = UserDefaults.standard.string(forKey: "mw_code_notes") ?? "222222"
         // le journal est un objet imbriqué : relayer ses changements aux vues qui observent AppState
         journal.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
@@ -56,11 +65,19 @@ final class AppState: ObservableObject {
         case .notes:
             screen = .notes
         case .input:
-            // Divergence voulue avec la webapp (choix Jérémie 2026-08-06) : l'app native
-            // démarre sur le déguisement Notes — cohérent avec le nom "Notes" de l'icône.
-            // Le black mode (saisie MASTER WORD) reste accessible par "‹ Notes".
-            screen = .notes
+            // Ouverture à froid sans URL : faux écran de verrouillage (fusion hub,
+            // choix Jérémie 2026-08-08). Un code → hub, l'autre → faux Notes.
+            // Les entrées par URL (?w=, stealth, mode=notes) court-circuitent le verrou.
+            screen = .lock
         }
+    }
+
+    /// Déverrouillage du faux écran de code. Retourne false si le code est inconnu
+    /// (la vue secoue les points, comme un vrai iPhone).
+    func unlock(_ code: String) -> Bool {
+        if code == lockCodeHub { screen = .hub; return true }
+        if code == lockCodeNotes { screen = .notes; return true }
+        return false
     }
 
     // ————— Déduction (même ordre de contrôle que la webapp) —————

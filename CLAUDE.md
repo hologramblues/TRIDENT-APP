@@ -11,6 +11,7 @@
 
 - `index.html` — TOUTE la webapp (HTML + CSS + JS dans un seul fichier, c'est voulu : simple à déployer, pas de build). Ne pas introduire de bundler, de framework ou de fichiers séparés sans demande explicite. **Source de vérité du prompt de déduction.**
 - `ios/` — app iOS native SwiftUI (réplique de la webapp, avec ses divergences voulues documentées dans PROJET.md). Projet généré par XcodeGen (`cd ios && xcodegen`), voir `ios/README.md`. Harness de tests : `ios/scripts/harness.swift`.
+- `enigma-remote.html` — le hub multi-effets (webapp autonome), embarqué dans l'app iOS en WKWebView avec pont natif `hub` (contrat : `CLAUDE-HUB-INTEGRATION.md` — le respecter pour toute modification, et suivre ses conventions JS : un fichier, vanilla, localStorage `er_*`, jamais d'info de méthode hors mode guide).
 - `api/` — backend Vercel (`/api/deduire`) : porte le prompt et l'appel Anthropic, clé côté serveur. `api/_prompt.js` est GÉNÉRÉ, ne jamais l'éditer. Déploiement : `api/README.md`.
 - `tools/bench.py` — banc de test de la déduction (batterie × N exécutions, stats de rang). À lancer avant/après chaque affinage du prompt (`export ANTHROPIC_API_KEY=…` d'abord).
 - Le prompt Swift ET `api/_prompt.js` sont injectés depuis index.html par `ios/scripts/sync_prompt.py` — **à relancer (puis vérifier avec `--check`) après chaque patch de DEDUCTION_PROMPT**.

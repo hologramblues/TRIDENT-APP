@@ -12,6 +12,9 @@ import Speech
 final class SpeechCapture: NSObject, ObservableObject {
     @Published var isListening = false
     @Published var lastWords = ""
+    /// Transcript brut cumulé de la session (partiels inclus) — consommé par le hub,
+    /// qui fait son propre parsing (mot + trigger). `lastWords` reste pour Trident.
+    @Published var rawTranscript = ""
     @Published var errorMessage: String?
 
     private let engine = AVAudioEngine()
@@ -57,6 +60,7 @@ final class SpeechCapture: NSObject, ObservableObject {
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             accumulated = ""
             lastWords = ""
+            rawTranscript = ""
             isListening = true
             try startRecognitionSession()
         } catch {
@@ -88,7 +92,8 @@ final class SpeechCapture: NSObject, ObservableObject {
                 guard let self, self.isListening, gen == self.generation else { return }
                 if let result {
                     self.current = result.bestTranscription.formattedString
-                    self.lastWords = SpeechTokenizer.lastFullWords(self.accumulated + " " + self.current)
+                    self.rawTranscript = (self.accumulated + " " + self.current).trimmingCharacters(in: .whitespaces)
+                    self.lastWords = SpeechTokenizer.lastFullWords(self.rawTranscript)
                     if result.isFinal { self.rollSession() }
                 } else if error != nil {
                     self.rollSession()
