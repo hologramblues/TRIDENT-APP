@@ -65,8 +65,10 @@ struct NotesView: View {
                     .padding(.top, 10)
                     .padding(.horizontal, 40)
                     .contentShape(Rectangle())
-                    // tour terminé : un tap sur la date remet tout à zéro pour le spectateur suivant
-                    .onTapGesture { app.notesReset() }
+                    // tour terminé : TRIPLE tap sur la date = remise à zéro pour le
+                    // spectateur suivant (triple pour qu'un spectateur qui manipule
+                    // la note ne l'efface pas d'un tap malheureux)
+                    .onTapGesture(count: 3) { app.notesReset() }
 
                 TextEditor(text: $app.noteText)
                     .font(.system(size: 17))

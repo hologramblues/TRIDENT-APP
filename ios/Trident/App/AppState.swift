@@ -17,6 +17,10 @@ final class AppState: ObservableObject {
     @Published var notesRevealed = false // candidat affiché en bas de la fausse note
     @Published var notesError = ""
     @Published var predictionDate: Date? // date antidatée affichée après une prédiction
+    /// Antidatage de la prédiction, en minutes (réglable dans RÉGLAGES, persistant).
+    @Published var antedateMinutes: Int {
+        didSet { UserDefaults.standard.set(antedateMinutes, forKey: "mw_antedate_min") }
+    }
     @Published var errorMessage = ""
     @Published var inputText = ""
     @Published var noteText = ""
@@ -28,6 +32,8 @@ final class AppState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init() {
+        let sauve = UserDefaults.standard.integer(forKey: "mw_antedate_min")
+        antedateMinutes = sauve > 0 ? sauve : 5
         // le journal est un objet imbriqué : relayer ses changements aux vues qui observent AppState
         journal.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
@@ -134,26 +140,9 @@ final class AppState: ObservableObject {
         validateCurrent()
         let mot = result.candidats[idx].mot
         noteText = mot.prefix(1).uppercased() + mot.dropFirst()
-        predictionDate = Self.antedatedDate()
+        // antidatage réglable (RÉGLAGES) : la note "existait" il y a X minutes/heures
+        predictionDate = Date().addingTimeInterval(-Double(antedateMinutes) * 60)
         notesRevealed = false
-    }
-
-    /// Date crédible d'une prédiction "écrite à l'avance" : le matin même (9 h 0x-5x)
-    /// si le tour se joue l'après-midi ou le soir, sinon la veille au soir (21 h 0x-5x).
-    static func antedatedDate(now: Date = Date()) -> Date {
-        let cal = Calendar.current
-        if cal.component(.hour, from: now) >= 14 {
-            var c = cal.dateComponents([.year, .month, .day], from: now)
-            c.hour = 9
-            c.minute = Int.random(in: 4...57)
-            return cal.date(from: c) ?? now
-        } else {
-            let veille = cal.date(byAdding: .day, value: -1, to: now) ?? now
-            var c = cal.dateComponents([.year, .month, .day], from: veille)
-            c.hour = 21
-            c.minute = Int.random(in: 4...57)
-            return cal.date(from: c) ?? now
-        }
     }
 
     /// Tap sur la ligne de date : remise à zéro complète pour le spectateur suivant
