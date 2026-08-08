@@ -6,16 +6,6 @@ struct RootView: View {
     var body: some View {
         content
             .onChange(of: app.screen, perform: updateIdleTimer)
-            // triple tap : Notes ↔ Réglages (le black mode n'est plus dans la
-            // navigation, les réglages passent par ce geste). Inactif pendant la
-            // révélation, où le tap simple navigue entre les candidats.
-            .background(SettingsGestureCatcher {
-                switch app.screen {
-                case .notes: if !app.notesRevealed { app.openSettings() }
-                case .settings: app.screen = .notes
-                default: break
-                }
-            })
     }
 
     /// Keep-awake : l'écran ne doit JAMAIS se verrouiller pendant le tour

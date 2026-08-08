@@ -11,11 +11,14 @@ struct SettingsView: View {
             Theme.bg.ignoresSafeArea()
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    // double tap sur le titre : retour au déguisement Notes
                     Text("RÉGLAGES")
                         .font(Theme.mono(11))
                         .tracking(4)
                         .foregroundColor(Theme.dim)
                         .padding(.bottom, 28)
+                        .contentShape(Rectangle())
+                        .onTapGesture(count: 2) { app.screen = .notes }
 
                     SecureField("clé API Anthropic (sk-ant-…)", text: $app.apiKeyField)
                         .font(Theme.mono(14))

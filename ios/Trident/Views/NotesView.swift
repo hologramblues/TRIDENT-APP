@@ -35,13 +35,14 @@ struct NotesView: View {
             VStack(spacing: 0) {
                 // ————— Barre "‹ Notes" / "OK" —————
                 HStack {
-                    // décoratif : fait partie du costume Apple Notes, ne mène nulle part
-                    // (réglages = glissement à deux doigts vers le bas)
+                    // costume Apple Notes — le double tap sur "Notes" ouvre les réglages
                     HStack(spacing: 4) {
                         Text("‹").font(.system(size: 24)).padding(.top, -2)
                         Text("Notes").font(.system(size: 17))
                     }
                     .foregroundColor(Theme.notesYellow)
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) { app.openSettings() }
                     Spacer()
                     Text("OK")
                         .font(.system(size: 17, weight: .semibold))
