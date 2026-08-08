@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>ER</title>
+<style>
+  :root{
+    --amber:#c9a227;
+    --amber-dim:#6b5713;
+    --ink:#e8e4d8;
+    --mut:#8a857a;
+    --bg:#000;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  html,body{height:100%;height:100dvh;overflow:hidden;background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);touch-action:manipulation}
+  #homeBtn{position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 8px);left:10px;
+    width:40px;height:40px;border-radius:10px;border:1px solid #333;background:#0c0c0c;
+    color:#b8b19a;font-size:21px;display:none;align-items:center;justify-content:center}
+  #homeBtn.on{display:flex}
+  #homeBtn:active{background:#1a1a1a}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .screen.on{display:flex}
+
+  /* ---------- HOME ---------- */
+  #home{padding:48px 28px 32px;gap:14px}
+  #home h1{font-size:15px;letter-spacing:.45em;color:var(--amber);font-weight:600;text-align:center;margin-bottom:22px}
+  .btn{display:block;width:100%;padding:16px 18px;border:1px solid #222;border-radius:12px;
+    background:#0c0c0c;color:var(--ink);font-size:16px;text-align:left}
+  .btn small{display:block;color:var(--mut);font-size:12px;margin-top:3px;font-weight:400}
+  .btn.go{border-color:var(--amber-dim);color:var(--amber)}
+  .btn:active{background:#161616}
+  #home .foot{margin-top:auto;text-align:center;color:#3a3a3a;font-size:11px}
+
+  /* ---------- SETTINGS / LISTS ---------- */
+  .panel{padding:28px 22px;gap:12px;overflow-y:auto}
+  .panel h2{font-size:13px;letter-spacing:.3em;color:var(--amber);font-weight:600;margin-bottom:8px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:13px 14px;background:#0c0c0c;border:1px solid #1d1d1d;border-radius:10px;font-size:14px}
+  .row .lab{color:var(--ink)}
+  .row .lab small{display:block;color:var(--mut);font-size:11px;margin-top:2px}
+  .keycap{min-width:64px;text-align:center;padding:7px 10px;border-radius:8px;border:1px solid #2a2a2a;
+    background:#111;color:var(--amber);font-size:13px;font-family:ui-monospace,monospace}
+  .keycap.wait{border-color:var(--amber);animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .tog{width:46px;height:27px;border-radius:14px;background:#222;position:relative;flex:none}
+  .tog::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#666;transition:.15s}
+  .tog.on{background:var(--amber-dim)}
+  .tog.on::after{left:22px;background:var(--amber)}
+  select,textarea,input[type=text]{width:100%;background:#0c0c0c;border:1px solid #1d1d1d;border-radius:10px;
+    color:var(--ink);font-size:14px;padding:11px}
+  input[type=text]{font-family:ui-monospace,monospace;letter-spacing:.2em;font-size:16px;
+    user-select:text;-webkit-user-select:text}
+  textarea{min-height:150px;font-family:ui-monospace,monospace;font-size:12px;line-height:1.5;
+    user-select:text;-webkit-user-select:text}
+  .back{color:var(--mut);font-size:13px;padding:6px 0 12px}
+  .hint{color:var(--mut);font-size:12px;line-height:1.5}
+
+  /* ---------- PERFORMANCE (fond noir) ---------- */
+  .perf{background:#000}
+  .zone{position:absolute;display:flex;align-items:center;justify-content:center;
+    color:transparent;font-size:13px;letter-spacing:.2em}
+  .guide .zone{color:#b8b19a;border:1px solid #4d4d4d;border-radius:10px;background:#0a0a0a;
+    font-size:15px;font-weight:600}
+  .guide .zone:active{background:#181818}
+  .guide #grid .eye{border:1px dashed #4d4d4d;border-radius:10px;display:flex;
+    align-items:center;justify-content:center;color:#6b665a;font-size:12px;letter-spacing:.25em}
+  .guide #grid .eye::after{content:"TAP \2014 GRILLE CAT\00C9GORIES"}
+  .guide .cat{border:1px solid #333;background:#0a0a0a}
+  .guide .pc-title{color:#999}
+  .guide .pc-dots i{border-color:#555}
+  .guide .dots i{background:#4d4d4d}
+  .dots{position:absolute;right:12px;bottom:10px;display:flex;gap:5px}
+  .dots i{width:4px;height:4px;border-radius:50%;background:#232323}
+
+  /* grille catégories */
+  #grid .cats{position:absolute;inset:0;padding:calc(env(safe-area-inset-top,0px) + 56px) 18px 90px;display:grid;
+    grid-template-columns:repeat(3,1fr);grid-auto-rows:110px;gap:10px;opacity:0;transition:opacity .12s}
+  #grid.show .cats{opacity:1}
+  .cat{border-radius:10px;display:flex;align-items:flex-start;padding:10px;
+    color:var(--amber);font-size:12.5px;line-height:1.3;background:#050505}
+  .cat:active{background:#101010}
+  #grid .eye{position:absolute;bottom:0;left:0;right:0;height:84px}
+
+  /* bandeau de saisie live (mode guide) */
+  .readout{display:none;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);
+    left:58px;right:10px;height:40px;
+    align-items:center;justify-content:space-between;padding:0 8px 0 14px;
+    border:1px solid #333;border-radius:10px;background:#0a0a0a}
+  .guide .readout{display:flex}
+  .ro-txt{font-family:ui-monospace,monospace;font-size:19px;letter-spacing:.35em;color:var(--amber);
+    white-space:nowrap;overflow-x:auto}
+  .ro-txt:empty::before{content:"\2014";color:#3a3a3a;letter-spacing:0}
+  .ro-undo{width:52px;height:34px;flex:none;border-radius:8px;border:1px solid #3a3a3a;
+    background:#121212;color:#b8b19a;font-size:17px;display:flex;align-items:center;justify-content:center}
+  .ro-undo:active{background:#1f1f1f}
+  .pc-digits{display:none;margin-top:14px;font-family:ui-monospace,monospace;
+    font-size:22px;letter-spacing:.45em;color:var(--amber);min-height:26px}
+  .guide .pc-digits{display:block}
+
+  /* passcode */
+  .pc-head{margin-top:16vh;text-align:center}
+  .pc-title{color:#4a463c;font-size:15px;font-weight:400;letter-spacing:.02em}
+  .pc-dots{display:flex;gap:14px;justify-content:center;margin-top:18px}
+  .pc-dots i{width:11px;height:11px;border-radius:50%;border:1px solid #3a382f;background:transparent}
+  .pc-dots i.f{background:var(--amber-dim);border-color:var(--amber-dim)}
+  .pad{margin:auto auto 12vh;display:grid;grid-template-columns:repeat(3,74px);gap:16px 26px;justify-content:center}
+  .pad b{width:74px;height:74px;border-radius:50%;background:#0d0d0c;color:#7a7566;
+    font-size:26px;font-weight:400;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+  .pad b small{font-size:9px;letter-spacing:.18em;color:#3d3a32;margin-top:3px}
+  .pad b:active{background:#1c1c1a}
+  .pad b.ghost{background:transparent;pointer-events:none}
+  #padDel{font-size:20px}
+
+  /* converge */
+  .cv-q{position:absolute;top:calc(env(safe-area-inset-top,0px) + 64px);left:16px;right:16px;text-align:center;
+    color:#7a6516;font-size:21px;font-weight:600;line-height:1.35}
+  .guide .cv-q{color:var(--amber)}
+  .cv-cands{position:absolute;top:34%;left:16px;right:16px;text-align:center;
+    color:#3a372e;font-size:12.5px;letter-spacing:.05em;line-height:1.6;max-height:22%;overflow:hidden}
+  .guide .cv-cands{color:#8a8272}
+  .cv-skip{position:absolute;bottom:calc(36% + 26px);left:0;right:0;text-align:center;
+    color:#4a4436;font-size:12px;letter-spacing:.15em;padding:8px 0}
+  .guide .cv-skip{color:#9a927e}
+  .cv-final .cv-q{top:34%;font-size:34px;letter-spacing:.08em;color:var(--amber)}
+  .eh-phrase{padding:14px;border:1px solid var(--amber-dim);border-radius:10px;background:#0f0d05;
+    color:var(--amber);font-size:16px;line-height:1.4;font-style:italic}
+  .eh-word{padding:12px 14px;border:1px solid #1d1d1d;border-radius:10px;background:#0c0c0c;margin-top:10px}
+  .eh-word b{color:var(--ink);font-size:16px;letter-spacing:.05em}
+  .eh-word small{display:block;color:var(--mut);font-size:12.5px;margin-top:4px;line-height:1.4}
+  .eh-word:active{background:#161616}
+  .tb-crumb{color:var(--amber);font-size:13px;letter-spacing:.08em;font-family:ui-monospace,monospace}
+  .tb-words{color:var(--mut);font-size:12.5px;line-height:1.5}
+  .tb-chips{display:flex;flex-wrap:wrap;gap:7px}
+  .tb-chips b{min-width:44px;text-align:center;padding:9px 6px;border-radius:9px;border:1px solid #2a4a2a;
+    background:#0b120b;color:#8fbf8f;font-size:14px;font-weight:600}
+  .tb-chips b small{display:block;font-size:9.5px;color:#567056;font-weight:400}
+  .tb-chips b.warn{border-color:#4a3a1a;background:#120e06;color:#9a8a5a}
+  .tb-chips b.warn small{color:#6b5f42}
+  .tb-chips b.sel{border-color:var(--amber);background:#1c1808;color:var(--amber)}
+  .tb-chips b:active{background:#1c1c1c}
+  .tb-tree{background:#fff;border:1px solid #1d1d1d;border-radius:10px;padding:10px;
+    overflow:auto;flex:none;max-height:48vh;min-height:60px}
+  .jt-node{display:flex;align-items:stretch;min-width:max-content}
+  .jt-letter{min-width:36px;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:16px;color:#000;border:1px solid #000;cursor:pointer;padding:0 8px;
+    margin:-1px 0 0 -1px}
+  .jt-branches{display:flex;flex-direction:column;flex:1}
+  .jt-leaf{border:1px solid #000;padding:7px 12px;color:#000;font-size:14.5px;cursor:pointer;
+    white-space:nowrap;margin:-1px 0 0 -1px}
+  .jt-root{background:#fff}
+  .jt-yes{background:#cdeeca}
+  .jt-no{background:#f8caca}
+  .jt-open{border-style:dashed;font-style:italic}
+  .jt-cur{outline:3px solid var(--amber);outline-offset:-3px}
+  .sq-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:7px}
+  .sq-rank{min-width:22px;height:22px;border-radius:50%;background:#1c1808;color:var(--amber);
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none}
+  .sq-line{display:flex;align-items:center;gap:6px;margin-top:7px;overflow-x:auto;
+    white-space:nowrap;padding:2px 0}
+  .sq-l{min-width:32px;text-align:center;padding:6px 8px;border:1px solid #333;border-radius:8px;
+    background:#0c0c0c;color:var(--ink);font-size:15px;font-weight:700;flex:none}
+  .sq-ar{font-size:13px;font-weight:700;flex:none}
+  .sq-ar.y{color:#8fbf8f}
+  .sq-ar.n{color:#c98a8a}
+  .sq-word{padding:6px 12px;border:1px solid var(--amber-dim);border-radius:8px;background:#171205;
+    color:var(--amber);font-size:14px;font-weight:700;letter-spacing:.05em;flex:none}
+  .ds-keys{position:absolute;top:38%;left:24px;right:24px;display:grid;
+    grid-template-columns:repeat(3,1fr);gap:14px;justify-items:stretch}
+  .ds-keys b{height:64px;border-radius:14px;border:1px solid #333;background:#0a0a0a;
+    color:#8a857a;font-size:24px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .guide .ds-keys b{color:var(--ink);border-color:#4d4d4d}
+  .ds-keys b:active{background:#1a1a1a}
+  .ds-keys b.master{color:#6b5713;font-size:19px}
+  .guide .ds-keys b.master{color:var(--amber)}
+  .cm-hint{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);left:0;right:0;
+    text-align:center;color:#4a4436;font-size:12px;letter-spacing:.12em}
+  .guide .cm-hint{color:#8a8272}
+  .cm-chips{position:absolute;top:calc(env(safe-area-inset-top,0px) + 96px);left:14px;right:14px;
+    display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+  .cm-chips b{width:62px;height:62px;border-radius:14px;border:1px solid #333;background:#0a0a0a;
+    color:#6b665a;font-size:24px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .cm-chips b.y{border-color:#3a6b3a;background:#0b160b;color:#8fbf8f}
+  .cm-chips b.n{border-color:#6b2f2f;background:#160b0b;color:#c98a8a}
+  .cm-chips b:active{opacity:.7}
+  .cm-final{position:absolute;top:46%;left:0;right:0;text-align:center;
+    color:var(--amber);font-size:34px;font-weight:700;letter-spacing:.1em}
+  .pr-ans{text-align:center;font-size:44px;font-weight:800;letter-spacing:.12em;
+    min-height:56px;color:#3a3a3a;transition:color .08s}
+  .pr-ans.y{color:#8fbf8f}
+  .pr-ans.n{color:#c98a8a}
+  .pr-keys{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+  .pr-keys b{padding:11px 0;text-align:center;border-radius:8px;border:1px solid #2a2a2a;
+    background:#0c0c0c;color:var(--ink);font-size:16px;font-weight:600}
+  .pr-keys b:active{background:#1c1c1c}
+  .pr-keys b.dim{opacity:.35}
+
+  /* peek */
+  #peek .list{position:absolute;inset:0;padding:calc(env(safe-area-inset-top,0px) + 56px) 20px 120px;overflow-y:auto;opacity:0;transition:opacity .1s}
+  #peek.show .list{opacity:1}
+  .pl-letter{color:var(--ink);font-size:15px;font-weight:600;margin:10px 0 2px}
+  .pl-words{color:#7a7566;font-size:13.5px;letter-spacing:.03em;line-height:1.5}
+  .pl-count{position:absolute;top:calc(env(safe-area-inset-top,0px) + 18px);left:58px;color:#2e2e2e;font-size:11px;letter-spacing:.2em;opacity:0;transition:opacity .1s}
+  #peek.show .pl-count{opacity:1}
+  #peek .crib{position:absolute;bottom:64px;left:0;right:0;display:flex;flex-wrap:wrap;gap:6px;
+    justify-content:center;padding:0 14px;opacity:0;transition:opacity .1s}
+  #peek.show .crib{opacity:1}
+  .crib b{min-width:30px;text-align:center;padding:6px 4px;border-radius:7px;
+    font-size:13px;font-weight:600;color:#565040;background:#070707}
+  .crib b.off{color:#1c1c1c;text-decoration:line-through}
+  #peek .none{position:absolute;top:44%;left:0;right:0;text-align:center;color:#3a3a3a;
+    font-size:13px;letter-spacing:.15em;opacity:0}
+  #peek.show .none{opacity:1}
+  .pk-bar{position:absolute;bottom:10px;left:10px;right:10px;display:flex;gap:10px;
+    opacity:0;pointer-events:none;transition:opacity .1s}
+  #peek.show .pk-bar{opacity:1;pointer-events:auto}
+  .pk-bar b{flex:1;text-align:center;padding:13px 0;border-radius:10px;border:1px solid #333;
+    background:#0a0a0a;color:#b8b19a;font-size:13px;letter-spacing:.12em;font-weight:600}
+  .pk-bar b:active{background:#181818}
+  .fb-tiles{display:flex;flex-wrap:wrap;gap:8px}
+  .fb-tiles b{padding:10px 14px;border-radius:9px;border:1px solid #333;background:#0c0c0c;
+    color:var(--amber);font-size:14px;letter-spacing:.06em;font-weight:600}
+  .fb-tiles b:active,.fb-tiles b.sel{background:#1c1808;border-color:var(--amber-dim)}
+</style>
+</head>
+<body>
+<div id="homeBtn">&#8962;</div>
+
+<!-- ======================= HOME ======================= -->
+<div class="screen on" id="home">
+  <h1>REMOTE&thinsp;HUB</h1>
+  <button class="btn go" data-go="binary"><b>Enigma</b><small>Séquence A/B remote/tap + forme &middot; catégories</small></button>
+  <button class="btn go" data-go="prenoms"><b>Prénoms</b><small>Divination propless &middot; binaire puis questions</small></button>
+  <button class="btn go" data-go="pin"><b>Code PIN</b><small>4 chiffres &middot; formes puis questions</small></button>
+  <button class="btn go" data-go="anagram"><b>Anagrammes</b><small>PA transgressif &middot; hooks &middot; exit hooks</small></button>
+  <button class="btn go" data-go="dob"><b>Date de naissance</b><small>Signe puis dichotomie sur le jour</small></button>
+  <button class="btn" data-go="settings"><b>Réglages</b><small>Touches remote &middot; options &middot; out</small></button>
+  <button class="btn" data-go="lists"><b>Listes</b><small>Catégories, prénoms &amp; associations</small></button>
+  <div class="foot">glisser 2 doigts vers le bas = retour &middot; V1</div>
+</div>
+
+<!-- ======================= SETTINGS ======================= -->
+<div class="screen panel" id="settings">
+  <div class="back" data-go="home">&larr; Accueil</div>
+  <h2>REMOTE</h2>
+  <div class="hint">Chaque touche&nbsp;: appuie sur la case puis presse le bouton de ta remote. Les chiffres 0–9 fonctionnent toujours en direct (mode chiffres de la remote).</div>
+  <div class="row"><span class="lab">Touche A<small>consonne / gauche</small></span><span class="keycap" data-map="A">?</span></div>
+  <div class="row"><span class="lab">Touche B<small>voyelle / droite</small></span><span class="keycap" data-map="B">?</span></div>
+  <div class="row"><span class="lab">Confirmer<small>valide la séquence</small></span><span class="keycap" data-map="C">?</span></div>
+  <div class="row"><span class="lab">Effacer<small>supprime la dernière saisie</small></span><span class="keycap" data-map="D">?</span></div>
+  <h2 style="margin-top:14px">OPTIONS</h2>
+  <div class="row"><span class="lab">Y est une voyelle</span><span class="tog" data-opt="yVowel"></span></div>
+  <div class="row"><span class="lab">Show Guide<small>affiche les zones tactiles (entraînement)</small></span><span class="tog" data-opt="guide"></span></div>
+  <div class="row"><span class="lab">Vibration à la saisie</span><span class="tog" data-opt="haptic"></span></div>
+  <h2 style="margin-top:14px">ANAGRAMMES / QUESTIONS</h2>
+  <div class="row"><span class="lab">Stratégie<small>transgressif = le moins de questions possible</small></span></div>
+  <select id="stratSel">
+    <option value="transgressive">Transgressif — profondeur minimale</option>
+    <option value="maxyes">Max OUI — le plus de hits</option>
+    <option value="balanced">Équilibré — coupes 50/50</option>
+  </select>
+  <div class="row"><span class="lab">Max de «&nbsp;NON&nbsp;»<small>au-delà : exit hook / candidats</small></span>
+    <select id="maxNonSel" style="width:70px;flex:none"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></div>
+  <div class="row"><span class="lab">Mode commutatif si disponible<small>ordre libre quand un set &copy; est enregistré</small></span><span class="tog on" data-opt="commutPref"></span></div>
+  <h2 style="margin-top:14px">PEEKSMITH</h2>
+  <div class="row"><span class="lab">PeekSmith 3<small id="psStatus">déconnecté</small></span>
+    <button class="btn" id="psBtn" style="width:auto;padding:9px 14px;flex:none"><b>Connecter</b></button></div>
+  <div class="hint">Boutons du PeekSmith : 1 = OUI, 2 = NON, 0 = passer. La lettre en cours et le nombre de restants s'affichent dessus. Sur iPhone, utilise le navigateur Bluefy (Web Bluetooth indisponible dans Safari).</div>
+  <h2 style="margin-top:14px">OUT / FALLBACK</h2>
+  <input type="text" id="outUrl" autocomplete="off" autocapitalize="off" placeholder="https://ton-app/?w={MOT}">
+  <div class="hint">URL ouverte par l'action «&nbsp;Out&nbsp;». <b>{MOT}</b> est remplacé par le mot choisi. Fonctionne avec une webapp (?w=), un raccourci iOS (shortcuts://run-shortcut?name=X&amp;input=text&amp;text={MOT}) ou une recherche d'images (https://www.google.com/search?tbm=isch&amp;q={MOT}).</div>
+  <div class="row"><span class="lab">Trigger phrase<small>mot déclencheur après le mot capté</small></span></div>
+  <input type="text" id="trigIn" autocomplete="off" autocapitalize="off" placeholder="intéressant">
+  <div class="row"><span class="lab">Clé API Claude<small>optionnelle — génère le mot «&nbsp;proche&nbsp;» s'il n'est pas dans tes associations</small></span></div>
+  <input type="text" id="apiIn" autocomplete="off" autocapitalize="off" placeholder="sk-ant-...">
+  <div class="hint">Le mot «&nbsp;proche&nbsp;» est cherché d'abord dans ta table d'associations (écran Listes &rarr; Associations), puis via l'API si une clé est fournie, sinon le mot exact est utilisé.</div>
+</div>
+
+<!-- ======================= LISTS ======================= -->
+<div class="screen panel" id="lists">
+  <div class="back" data-go="home">&larr; Accueil</div>
+  <h2>LISTES</h2>
+  <select id="listSel"></select>
+  <textarea id="listTxt" spellcheck="false" placeholder="MOTS, SEPARES, PAR, VIRGULES"></textarea>
+  <button class="btn go" id="listSave" style="text-align:center"><b>Enregistrer</b></button>
+  <button class="btn" id="treeBtn" style="text-align:center;display:none"><b>&#127794; Éditer l'arbre (JTA)</b></button>
+  <div class="hint">Majuscules sans accents, virgules. Les accents et espaces collés sont nettoyés automatiquement (GRILLE PAIN &rarr; GRILLEPAIN).</div>
+</div>
+
+<!-- ======================= GRILLE CATÉGORIES ======================= -->
+<div class="screen perf" id="grid">
+  <div class="cats"></div>
+  <div class="eye"></div>
+</div>
+
+<!-- ======================= BINARY INPUT ======================= -->
+<div class="screen perf" id="binary">
+  <div class="readout"><span class="ro-txt" id="binSeq"></span><b class="ro-undo" id="binUndo">&#9003;</b></div>
+  <div class="zone" id="zConfirm" style="top:calc(env(safe-area-inset-top, 0px) + 56px);left:10px;right:10px;height:calc(44% - 46px - env(safe-area-inset-top, 0px))">CONFIRM</div>
+  <div class="zone" id="zA" style="bottom:10px;left:10px;width:calc(50% - 15px);height:52%">A</div>
+  <div class="zone" id="zB" style="bottom:10px;right:10px;width:calc(50% - 15px);height:52%">B</div>
+  <div class="dots" id="binDots"><i></i><i></i></div>
+</div>
+
+<!-- ======================= FORME 1ÈRE LETTRE ======================= -->
+<div class="screen perf" id="shape">
+  <div class="readout"><span class="ro-txt" id="shapeSeq"></span></div>
+  <div class="zone" id="zS1" style="top:calc(env(safe-area-inset-top, 0px) + 56px);left:10px;right:10px;height:calc(44% - 46px - env(safe-area-inset-top, 0px))">DROITES</div>
+  <div class="zone" id="zS2" style="bottom:10px;left:10px;width:calc(50% - 15px);height:52%">MIXTES</div>
+  <div class="zone" id="zS3" style="bottom:10px;right:10px;width:calc(50% - 15px);height:52%">COURBES</div>
+  <div class="dots"><i></i><i></i><i></i></div>
+</div>
+
+<!-- ======================= PASSCODE (pavé à l'écran + remote) ======================= -->
+<div class="screen perf" id="passcode">
+  <div class="pc-head">
+    <div class="pc-title">Enter Passcode</div>
+    <div class="pc-dots" id="pcDots"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="pc-digits" id="pcDigits"></div>
+  </div>
+  <div class="pad" id="pad">
+    <b data-n="1">1</b><b data-n="2">2<small>ABC</small></b><b data-n="3">3<small>DEF</small></b>
+    <b data-n="4">4<small>GHI</small></b><b data-n="5">5<small>JKL</small></b><b data-n="6">6<small>MNO</small></b>
+    <b data-n="7">7<small>PQRS</small></b><b data-n="8">8<small>TUV</small></b><b data-n="9">9<small>WXYZ</small></b>
+    <b class="ghost"></b><b data-n="0">0</b><b id="padDel">&#9003;</b>
+  </div>
+</div>
+
+<!-- ======================= ARBRE (builder JTA) ======================= -->
+<div class="screen panel" id="treeb">
+  <div class="back" data-go="lists">&larr; Listes</div>
+  <h2 id="tbTitle">ARBRE</h2>
+  <div class="tb-crumb" id="tbCrumb"></div>
+  <div class="tb-words" id="tbWords"></div>
+  <div class="tb-chips" id="tbChips"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" id="tbUp" style="flex:1;text-align:center"><b>&uarr; Parent</b></button>
+    <button class="btn" id="tbClear" style="flex:1;text-align:center"><b>&#10005; Lettre</b></button>
+  </div>
+  <div class="row"><span class="lab">Masquer les mauvaises lettres<small>critère JTA (budget log&#8322;)</small></span><span class="tog on" id="tbHide"></span></div>
+  <div class="hint" style="margin-top:4px">GÉNÉRATION AUTO (façon Magic Oval) :</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" data-gen="tad" style="flex:1;min-width:45%;text-align:center"><b>TA Divers</b><small>profondeur min &middot; lettres variées</small></button>
+    <button class="btn" data-gen="tah" style="flex:1;min-width:45%;text-align:center"><b>TA Homogène</b><small>profondeur min &middot; peu de lettres</small></button>
+    <button class="btn" data-gen="pa" style="flex:1;min-width:45%;text-align:center"><b>Progressif</b><small>minimum de NON</small></button>
+    <button class="btn" data-gen="fpa" style="flex:1;min-width:45%;text-align:center"><b>Frontloaded</b><small>aucun NON après le 1er OUI</small></button>
+  </div>
+  <div class="tb-tree" id="tbTree"></div>
+  <button class="btn go" id="tbSave" style="text-align:center"><b>Enregistrer l'arbre</b></button>
+  <button class="btn" id="tbPractice" style="text-align:center"><b>&#127919; S'entraîner sur cet arbre</b></button>
+  <div style="display:flex;gap:8px">
+    <button class="btn" id="tbPerfect" style="flex:1;text-align:center"><b>Scan parfait</b></button>
+    <button class="btn" id="tbSilent" style="flex:1;text-align:center"><b>Scan silencieux</b></button>
+    <button class="btn" id="tbCommut" style="flex:1;text-align:center"><b>Commutatif</b></button>
+  </div>
+  <div class="hint" id="tbScanOut"></div>
+  <input type="text" id="tbImport" autocomplete="off" autocapitalize="off" placeholder="Coller un permalink JTA (?words=...&picks=...)">
+  <div class="hint">L'arbre enregistré est suivi en performance ; s'il ne couvre pas une branche, l'algo live prend le relais. Format compatible permalinks JTA.</div>
+</div>
+
+<!-- ======================= ENTRAÎNEMENT ======================= -->
+<div class="screen panel" id="practice">
+  <div class="back" data-go="treeb">&larr; Arbre</div>
+  <h2>ENTRAÎNEMENT</h2>
+  <div class="hint" id="prStat"></div>
+  <div class="pr-ans" id="prAns">&mdash;</div>
+  <div class="pr-keys" id="prKeys"></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn go" id="prReveal" style="flex:1;text-align:center"><b>Je révèle</b></button>
+    <button class="btn" id="prNew" style="flex:1;text-align:center"><b>Nouveau mot</b></button>
+  </div>
+  <div class="row"><span class="lab">Aide<small>signale les écarts à l'arbre et la lettre attendue</small></span><span class="tog on" id="prHelp"></span></div>
+  <div class="hint" id="prOut"></div>
+  <div class="fb-tiles" id="prWords"></div>
+</div>
+
+<!-- ======================= DOB — NOMBRE NUMÉROLOGIQUE ======================= -->
+<div class="screen perf" id="dobsum">
+  <div class="cv-q" id="dsQ">Réduisez le jour de votre naissance à un seul chiffre&hellip; un 25 devient 7. Vous obtenez&nbsp;?</div>
+  <div class="ds-keys" id="dsKeys">
+    <b data-d="1">1</b><b data-d="2">2</b><b data-d="3">3</b>
+    <b data-d="4">4</b><b data-d="5">5</b><b data-d="6">6</b>
+    <b data-d="7">7</b><b data-d="8">8</b><b data-d="9">9</b>
+    <b data-d="11" class="master">11</b><b data-d="22" class="master">22</b>
+  </div>
+  <div class="cv-skip" id="dsHint">nombres maîtres 11/22 : s'ils ne réduisent pas jusqu'au bout</div>
+</div>
+
+<!-- ======================= CONVERGE (questions éliminantes) ======================= -->
+<div class="screen perf" id="converge">
+  <div class="readout"><span class="ro-txt" id="cvCount"></span><b class="ro-undo" id="cvUndo">&#9003;</b></div>
+  <div class="cv-q" id="cvQ"></div>
+  <div class="cv-cands" id="cvCands"></div>
+  <div class="cv-skip" id="cvSkip">autre question</div>
+  <div class="zone" id="zYes" style="bottom:10px;left:10px;width:calc(50% - 15px);height:36%">OUI</div>
+  <div class="zone" id="zNo" style="bottom:10px;right:10px;width:calc(50% - 15px);height:36%">NON</div>
+</div>
+
+<!-- ======================= EXIT HOOK ======================= -->
+<div class="screen perf panel" id="exithook">
+  <div class="back" id="ehBack">&larr; Questions</div>
+  <h2>EXIT&nbsp;HOOK</h2>
+  <div class="eh-phrase" id="ehPhrase"></div>
+  <div id="ehWords"></div>
+  <button class="btn" id="ehContinue" style="text-align:center"><b>Continuer les questions</b></button>
+</div>
+
+<!-- ======================= COMMUTATIF (ordre libre) ======================= -->
+<div class="screen perf" id="commut">
+  <div class="readout"><span class="ro-txt" id="cmCount"></span><b class="ro-undo" id="cmReset">&#10226;</b></div>
+  <div class="cm-hint">tap : &mdash; &rarr; OUI &rarr; NON</div>
+  <div class="cm-chips" id="cmChips"></div>
+  <div class="cv-cands" id="cmCands" style="top:auto;bottom:26%"></div>
+  <div class="cm-final" id="cmFinal"></div>
+  <div class="cv-skip" id="cmToTree" style="bottom:20px">&rarr; passer aux questions en arbre</div>
+</div>
+
+<!-- ======================= PEEK ======================= -->
+<div class="screen perf" id="peek">
+  <div class="pl-count" id="peekCount"></div>
+  <div class="list" id="peekList"></div>
+  <div class="none" id="peekNone">AUCUN&nbsp;MOT &mdash; FALLBACK</div>
+  <div class="crib" id="peekCrib"></div>
+  <div class="pk-bar">
+    <b id="pkRestart">&#10226;</b>
+    <b id="pkConv">?&nbsp;QUESTIONS</b>
+    <b id="pkFallback">FALLBACK</b>
+  </div>
+</div>
+
+<!-- ======================= FALLBACK / OUT ======================= -->
+<div class="screen perf panel" id="fallback">
+  <div class="back" data-go="peek">&larr; Peek</div>
+  <h2>FALLBACK &mdash; OUT</h2>
+  <div class="hint">Choisis un mot du peek, saisis-le, ou capte-le à la voix, puis déclenche l'out.</div>
+  <button class="btn" id="fbMic" style="text-align:center"><b>&#127908; Écouter</b><small id="fbLive">mot + «&nbsp;intéressant&nbsp;» = capture</small></button>
+  <select id="fbAction">
+    <option value="out">Out &rarr; URL configurée</option>
+    <option value="gproche">Google Images &mdash; mot PROCHE</option>
+    <option value="gexact">Google Images &mdash; mot exact</option>
+    <option value="none">Juste capturer (pas d'action)</option>
+  </select>
+  <div class="fb-tiles" id="fbTiles"></div>
+  <input type="text" id="fbWord" autocomplete="off" autocapitalize="characters" placeholder="MOT">
+  <button class="btn go" id="fbSend" style="text-align:center"><b>Déclencher</b></button>
+  <div style="display:flex;gap:10px">
+    <button class="btn" id="fbCopy" style="text-align:center;flex:1"><b>Copier</b></button>
+    <button class="btn" id="fbAdd" style="text-align:center;flex:1"><b>+ Liste</b></button>
+  </div>
+  <div class="hint" id="fbHint"></div>
+</div>
+
+<script>
+/* =====================================================================
+   ENIGMA REMOTE — V1
+   Moteur de filtrage (binaire + code 6 chiffres) + input remote HID/chiffres
+   ===================================================================== */
+
+/* ---------- listes de départ (normalisées) ---------- */
+const DEFAULT_LISTS = {
+"Longs mots":"UNIVERS,CATHEDRALE,MONTAGNE,ELEPHANT,ORDINATEUR,TELEVISION,REFRIGERATEUR,BIBLIOTHEQUE,HELICOPTERE,PARAPLUIE,DICTIONNAIRE,CALCULATRICE,DECAPSULEUR,HIPPOPOTAME,RHINOCEROS,CROCODILE,PAPILLON,GRENOUILLE,ASPIRATEUR,VENTILATEUR,CLIMATISEUR,MICROSCOPE,TELESCOPE,THERMOMETRE,ANNIVERSAIRE,CHAMPIGNON,CHAUSSETTE,CHAUSSURE,PANTALON,PORTEFEUILLE,TELEPHONE,TROTTINETTE,LOCOMOTIVE,AUTOMOBILE,MOTOCYCLETTE,AEROPORT,RESTAURANT,BOULANGERIE,PHARMACIE,ACCORDEON,SAXOPHONE,VIOLONCELLE,HARMONICA,XYLOPHONE,MICROPHONE,HAUTPARLEUR,CASQUETTE,PARACHUTE,MONTGOLFIERE,SOUSMARIN,GRATTECIEL,ESCALATOR,ASCENSEUR,CHEMINEE,FONTAINE,AQUARIUM,PLANETARIUM,OBSERVATOIRE,LABORATOIRE,BALANCOIRE,TRAMPOLINE",
+"Combo Mix":"ROUGE,BLEU,VERT,JAUNE,ORANGE,VIOLET,ROSE,NOIR,BLANC,GRIS,MARRON,TURQUOISE,CARRE,CERCLE,TRIANGLE,RECTANGLE,LOSANGE,OVALE,ETOILE,COEUR,SPIRALE,CUBE,SPHERE,PYRAMIDE,BELIER,TAUREAU,GEMEAUX,CANCER,LION,VIERGE,BALANCE,SCORPION,SAGITTAIRE,CAPRICORNE,VERSEAU,POISSONS,JANVIER,FEVRIER,MARS,AVRIL,MAI,JUIN,JUILLET,AOUT,SEPTEMBRE,OCTOBRE,NOVEMBRE,DECEMBRE,MERCURE,VENUS,TERRE,JUPITER,SATURNE,URANUS,NEPTUNE,TULIPE,MARGUERITE,TOURNESOL,ORCHIDEE,JASMIN,MUGUET,LILAS,PIVOINE,ABEILLE,FOURMI,PAPILLON,LIBELLULE,COCCINELLE,MOUSTIQUE,MOUCHE,GRILLON,CIGALE,SAUTERELLE",
+"Pays":"FRANCE,ESPAGNE,ITALIE,PORTUGAL,ALLEMAGNE,BELGIQUE,SUISSE,CANADA,BRESIL,ARGENTINE,MEXIQUE,JAPON,CHINE,INDE,RUSSIE,MAROC,ALGERIE,TUNISIE,SENEGAL,EGYPTE,GRECE,TURQUIE,NORVEGE,SUEDE,FINLANDE,DANEMARK,IRLANDE,ISLANDE,POLOGNE,HONGRIE,ROUMANIE,BULGARIE,CROATIE,SERBIE,SLOVENIE,SLOVAQUIE,AUTRICHE,AUSTRALIE,COLOMBIE,CHILI,PEROU,CUBA,THAILANDE,VIETNAM,INDONESIE,MALAISIE,PHILIPPINES,CAMEROUN,NIGERIA,KENYA,MADAGASCAR",
+"Naturel grand":"CASCADE,RIVIERE,FLEUVE,COLLINE,MONTAGNE,VOLCAN,GLACIER,FORET,JUNGLE,DESERT,OCEAN,LAC,ETANG,MARAIS,PLAGE,FALAISE,CANYON,GROTTE,CAVERNE,ILE,PRAIRIE,SAVANE,TOUNDRA,BANQUISE,DUNE,VALLEE,GORGE,RECIF,ICEBERG,GEYSER,TORRENT,CHUTE,ARBRE,CHENE,SAPIN,PALMIER,SEQUOIA,BAOBAB,NUAGE,ORAGE,TEMPETE,TORNADE,OURAGAN,AURORE,HORIZON,ETOILE,PLANETE,COMETE,GALAXIE,UNIVERS,SOLEIL,LUNE",
+"Objets grands":"GRATTECIEL,TRAIN,BATEAU,AVION,VOITURE,CAMION,BUS,TRACTEUR,HELICOPTERE,FUSEE,SOUSMARIN,MOTO,VELO,CARAVANE,REMORQUE,GRUE,BULLDOZER,PELLETEUSE,ARMOIRE,CANAPE,LIT,TABLE,BUREAU,BIBLIOTHEQUE,COMMODE,REFRIGERATEUR,CONGELATEUR,LAVELINGE,LAVEVAISSELLE,FOUR,CHEMINEE,ESCALIER,ASCENSEUR,PORTE,FENETRE,PONT,TOUR,CHATEAU,EGLISE,CATHEDRALE,MOULIN,PHARE,STATUE,FONTAINE,PISCINE,TRAMPOLINE,BALANCOIRE,TOBOGGAN,TENTE,PIANO,ORGUE,HARPE,BILLARD,BABYFOOT",
+"Animaux":"CHIEN,CHAT,CHEVAL,VACHE,MOUTON,CHEVRE,COCHON,LAPIN,SOURIS,RAT,ELEPHANT,GIRAFE,LION,TIGRE,ZEBRE,SINGE,GORILLE,PANDA,OURS,LOUP,RENARD,CERF,SANGLIER,ECUREUIL,HERISSON,AIGLE,FAUCON,HIBOU,CHOUETTE,PIGEON,CORBEAU,MOINEAU,HIRONDELLE,PERROQUET,PINGOUIN,DAUPHIN,BALEINE,REQUIN,THON,SAUMON,TRUITE,CRABE,HOMARD,CREVETTE,PIEUVRE,SERPENT,LEZARD,TORTUE,GRENOUILLE,CROCODILE,PAPILLON,ABEILLE,GUEPE,FOURMI,ARAIGNEE,SCORPION,CHAMEAU,DROMADAIRE,KANGOUROU,KOALA,PONEY,ANE,TAUREAU,COQ,POULE,CANARD,OIE,DINDE,CYGNE,FLAMANT,AUTRUCHE,HIPPOPOTAME,RHINOCEROS,LEOPARD,GUEPARD,PANTHERE,HYENE,CHACAL,BISON,BUFFLE",
+"Naturel petit":"PIERRE,FEUILLE,CRISTAL,CAILLOU,GALET,SABLE,COQUILLAGE,PLUME,BRANCHE,BRINDILLE,RACINE,GRAINE,NOYAU,BOURGEON,PETALE,FLEUR,ROSE,TULIPE,CHAMPIGNON,MOUSSE,FOUGERE,GLAND,CHATAIGNE,NOISETTE,NOIX,POMME,POIRE,CERISE,FRAISE,FRAMBOISE,MYRTILLE,CITRON,ORANGE,BANANE,RAISIN,OLIVE,AMANDE,PERLE,DIAMANT,RUBIS,SAPHIR,EMERAUDE,QUARTZ,AMBRE,CORAIL,EPINE,CACTUS,TREFLE,PISSENLIT,MARGUERITE,TOURNESOL,LAVANDE,COQUELICOT,GOUTTE,FLOCON,GLACON,BULLE,ECORCE,LICHEN,ALGUE",
+"Objets petits":"PIECE,GUITARE,CLE,CLOU,VIS,MARTEAU,TOURNEVIS,PINCE,CISEAUX,COUTEAU,FOURCHETTE,CUILLERE,ASSIETTE,VERRE,TASSE,BOL,BOUTEILLE,BOUCHON,TIREBOUCHON,STYLO,CRAYON,GOMME,REGLE,COMPAS,PINCEAU,FEUTRE,CAHIER,LIVRE,JOURNAL,MAGAZINE,ENVELOPPE,TIMBRE,MONTRE,BAGUE,COLLIER,BRACELET,LUNETTES,CHAPEAU,ECHARPE,GANT,CEINTURE,PORTEFEUILLE,SAC,VALISE,PARAPLUIE,TELEPHONE,TABLETTE,ORDINATEUR,SOURIS,CLAVIER,ECOUTEURS,CASQUE,BRIQUET,ALLUMETTE,BOUGIE,AMPOULE,LAMPE,MIROIR,PEIGNE,BROSSE,SAVON,SERVIETTE,EPONGE,TORCHON,BALAI,SEAU,ENTONNOIR,PASSOIRE,CASSEROLE,POELE,LOUCHE,FOUET,TABLIER,CARTES,BALLON,RAQUETTE,SIFFLET,HARMONICA,FLUTE,TAMBOUR,VIOLON,TROMPETTE,TELECOMMANDE,PILE,CHARGEUR,CABLE,AGRAFEUSE,TROMBONE,PUNAISE,SCOTCH,FICELLE,CORDE,ELASTIQUE,AIMANT,LOUPE,JUMELLES,BOUSSOLE,THERMOMETRE,SERINGUE,PANSEMENT,MEDICAMENT",
+"Prénoms":"THOMAS,NICOLAS,JULIEN,MAXIME,ANTOINE,PIERRE,PAUL,JACQUES,MICHEL,ALAIN,PHILIPPE,LAURENT,DAVID,JEROME,SEBASTIEN,GUILLAUME,ALEXANDRE,VINCENT,ROMAIN,KEVIN,LUCAS,HUGO,LOUIS,JULES,GABRIEL,RAPHAEL,ARTHUR,NATHAN,ETHAN,NOAH,LEO,ADAM,LIAM,MATHIS,ENZO,THEO,CLEMENT,BAPTISTE,QUENTIN,FLORIAN,ANTHONY,JONATHAN,MICKAEL,STEPHANE,CHRISTOPHE,FREDERIC,PATRICK,DANIEL,BERNARD,ANDRE,RENE,GEORGES,HENRI,MARCEL,ROBERT,GERARD,FRANCOIS,JEAN,CLAUDE,CHRISTIAN,PASCAL,THIERRY,BRUNO,OLIVIER,GILLES,DIDIER,ERIC,FABRICE,CEDRIC,DAMIEN,BENOIT,MATHIEU,SIMON,MARTIN,VICTOR,SACHA,TOM,NOLAN,MAEL,TIMEO,AARON,AXEL,ROBIN,SAMUEL,BENJAMIN,ALEXIS,DYLAN,RAYAN,MEHDI,KARIM,MOHAMED,IBRAHIM,YANIS,SOFIANE,MARIE,JEANNE,MARGUERITE,CAMILLE,LEA,MANON,CHLOE,EMMA,LOUISE,ALICE,JULIETTE,CHARLOTTE,PAULINE,MARION,LAURA,SARAH,JULIE,AURELIE,CELINE,SANDRINE,NATHALIE,ISABELLE,CATHERINE,SYLVIE,MARTINE,MONIQUE,NICOLE,FRANCOISE,CHRISTINE,VALERIE,SOPHIE,ANNE,CLAIRE,HELENE,ELISE,MATHILDE,CLARA,INES,JADE,LINA,MILA,ROSE,ANNA,EVA,LOLA,ZOE,NINA,LUCIE,ELSA,MARINE,OCEANE,MELANIE,ELODIE,AMANDINE,MORGANE,AUDREY,VANESSA,JESSICA,FANNY,MARGAUX,SOLENE,MAELYS,AMBRE,ROMANE,LEONIE,VICTOIRE,CAPUCINE,SALOME,NOEMIE,MAEVA,LILOU,LOUNA,YASMINE,FATIMA"
+};
+const CAT_ORDER = ["Longs mots","Combo Mix","Pays","Naturel grand","Objets grands","Animaux","Naturel petit","Objets petits","Prénoms"];
+
+/* ---------- listes anagrammes (portées de Mentagram) ---------- */
+const DEFAULT_ANAG = {
+zodiac:{name:"Zodiaque",words:["BELIER","TAUREAU","GEMEAUX","CANCER","LION","VIERGE","BALANCE","SCORPION","SAGITTAIRE","CAPRICORNE","VERSEAU","POISSONS"],
+ hooks:[
+  {word:"CAPRICORNE",phrase:"Pense à ton signe... répète-le mentalement...",note:"Long mot, réactions sur le C"},
+  {word:"SAGITTAIRE",phrase:"Visualise le symbole...",note:"Geste de flèche possible"}],
+ exitHooks:[
+  {words:["VERSEAU","TAUREAU"],phrase:"Imagine l'animal dans son élément...",distinction:{VERSEAU:"Confusion (pas un animal)",TAUREAU:"Visualise clairement"}},
+  {words:["LION","VIERGE"],phrase:"C'est un signe fort, puissant ?",distinction:{LION:"Acquiesce",VIERGE:"Hésite"}},
+  {words:["GEMEAUX","CANCER"],phrase:"Y a-t-il une dualité ?",distinction:{GEMEAUX:"Oui (jumeaux)",CANCER:"Perplexe"}},
+  {words:["BALANCE","SCORPION"],phrase:"C'est un signe paisible ?",distinction:{BALANCE:"Oui",SCORPION:"Non, intense"}},
+  {words:["BELIER","POISSONS"],phrase:"L'animal est sur terre ?",distinction:{BELIER:"Oui",POISSONS:"Non, eau"}},
+  {words:["SCORPION","POISSONS"],phrase:"C'est un animal à pattes ?",distinction:{SCORPION:"Oui (8 pattes)",POISSONS:"Non"}},
+  {words:["LION","SCORPION","POISSONS"],phrase:"C'est un mammifère ?",distinction:{LION:"Oui",SCORPION:"Non (arachnide)",POISSONS:"Non (poisson)"}},
+  {words:["TAUREAU","VERSEAU","GEMEAUX"],phrase:"C'est un animal ?",distinction:{TAUREAU:"Oui",VERSEAU:"Non (porteur d'eau)",GEMEAUX:"Non (jumeaux)"}}]},
+colors:{name:"Couleurs",words:["ROUGE","BLEU","VERT","JAUNE","VIOLET","ORANGE","MARRON","BLANC","NOIR","ROSE","GRIS","TURQUOISE"],
+ hooks:[{word:"TURQUOISE",phrase:"C'est une couleur simple ou originale ?",note:"Seul mot complexe"}],
+ exitHooks:[
+  {words:["ROUGE","ROSE"],phrase:"C'est intense, vif ?",distinction:{ROUGE:"Oui",ROSE:"Plus doux"}},
+  {words:["BLANC","NOIR"],phrase:"C'est lumineux ?",distinction:{BLANC:"Oui",NOIR:"Non"}},
+  {words:["BLEU","VERT"],phrase:"C'est la couleur du ciel ?",distinction:{BLEU:"Oui",VERT:"Non, nature"}}]},
+superheroes:{name:"Super-héros",words:["BATMAN","SUPERMAN","SPIDERMAN","IRONMAN","HULK","THOR","WOLVERINE","FLASH","AQUAMAN","DEADPOOL","ANTMAN","DAREDEVIL"],
+ hooks:[{word:"DAREDEVIL",phrase:"C'est un héros mainstream ?",note:"Moins connu"}],
+ exitHooks:[
+  {words:["BATMAN","SUPERMAN"],phrase:"Il a des super-pouvoirs ?",distinction:{BATMAN:"Non",SUPERMAN:"Oui"}},
+  {words:["HULK","THOR"],phrase:"C'est un humain transformé ?",distinction:{HULK:"Oui",THOR:"Non, dieu"}}]},
+planets:{name:"Planètes",words:["MERCURE","VENUS","TERRE","MARS","JUPITER","SATURNE","URANUS","NEPTUNE"],
+ hooks:[],
+ exitHooks:[
+  {words:["VENUS","MARS"],phrase:"Planète féminine ?",distinction:{VENUS:"Oui",MARS:"Non"}},
+  {words:["JUPITER","SATURNE"],phrase:"Elle a des anneaux célèbres ?",distinction:{JUPITER:"Hésite",SATURNE:"Oui"}}]},
+cards:{name:"Couleurs cartes",words:["COEUR","CARREAU","PIQUE","TREFLE"],
+ hooks:[],
+ exitHooks:[
+  {words:["COEUR","CARREAU"],phrase:"C'est rouge... passionné ?",distinction:{COEUR:"Oui, amour",CARREAU:"Rouge mais géométrique"}},
+  {words:["PIQUE","TREFLE"],phrase:"Forme pointue ?",distinction:{PIQUE:"Oui",TREFLE:"Non, arrondi"}}]}
+};
+
+/* mot → terme de recherche "proche mais pas exact" (façon Search) */
+const DEFAULT_ASSOC = "TELEVISION=ecran plat,TELEPHONE=coque de protection,ORDINATEUR=clavier retro eclaire,GUITARE=mediator,LIVRE=marque page,STYLO=tache d encre,CLE=serrure ancienne,MONTRE=bracelet cuir,LUNETTES=etui a lunettes,BOUGIE=allumette enflammee,PARAPLUIE=flaque de pluie,COUTEAU=aiguiseur,CHIEN=laisse en cuir,CHAT=pelote de laine,ELEPHANT=savane trompe,TORCHON=evier cuisine,AMPOULE=filament,PIECE=tirelire,VELO=sonnette guidon,VOITURE=volant cuir,AVION=piste decollage,TRAIN=quai de gare,PIANO=partition,VIOLON=archet,CAMERA=trepied,MIROIR=reflet,BAGUE=ecrin velours,COLLIER=fermoir,SAC=bandouliere,VALISE=etiquette bagage";
+
+/* ---------- formes des majuscules (mêmes ensembles qu'Enigma, ambiguïtés incluses) ---------- */
+const SHAPE = {
+  1:new Set("AEFHIKLMNTVWXYZ"),
+  2:new Set("BDGJPQRSU"),
+  3:new Set("CGOSUJQ")
+};
+
+/* ---------- état & persistance ---------- */
+const store = {
+  get lists(){ try{return JSON.parse(localStorage.getItem("er_lists"))||{...DEFAULT_LISTS}}catch(e){return {...DEFAULT_LISTS}} },
+  set lists(v){ try{localStorage.setItem("er_lists",JSON.stringify(v))}catch(e){} },
+  get map(){ try{return JSON.parse(localStorage.getItem("er_map"))||{}}catch(e){return {}} },
+  set map(v){ try{localStorage.setItem("er_map",JSON.stringify(v))}catch(e){} },
+  get opts(){ try{return JSON.parse(localStorage.getItem("er_opts"))||{yVowel:true,guide:true,haptic:true,commutPref:true}}catch(e){return {yVowel:true,guide:true,haptic:true,commutPref:true}} },
+  set opts(v){ try{localStorage.setItem("er_opts",JSON.stringify(v))}catch(e){} },
+  get assoc(){ try{return localStorage.getItem("er_assoc")??DEFAULT_ASSOC}catch(e){return DEFAULT_ASSOC} },
+  set assoc(v){ try{localStorage.setItem("er_assoc",v)}catch(e){} },
+  get anag(){ try{return JSON.parse(localStorage.getItem("er_anag"))||JSON.parse(JSON.stringify(DEFAULT_ANAG))}catch(e){return JSON.parse(JSON.stringify(DEFAULT_ANAG))} },
+  set anag(v){ try{localStorage.setItem("er_anag",JSON.stringify(v))}catch(e){} }
+};
+let S = {
+  screen:"home",
+  effect:"enigma",    // "enigma" | "prenoms" | "pin"
+  perfMode:null,      // "binary" | "passcode"
+  category:null,
+  seq:[],             // saisie binaire A/B
+  digits:[],          // saisie code
+  shape:0,
+  pin:[],             // chiffres PIN validés
+  results:[],
+  crib:{},            // lettre -> bool actif
+  learn:null          // touche en cours d'apprentissage
+};
+
+/* ---------- utilitaires ---------- */
+const $ = s=>document.querySelector(s);
+const $$ = s=>document.querySelectorAll(s);
+const norm = w => w.toUpperCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+  .replace(/Œ/g,"OE").replace(/Æ/g,"AE")
+  .replace(/[^A-Z]/g,"");
+const vowelSet = () => new Set(store.opts.yVowel ? "AEIOUY" : "AEIOU");
+const isV = c => vowelSet().has(c);
+/* ---------- pont natif iOS (WKWebView) — auto-détecté, sans effet en web pur ---------- */
+const NATIVE = !!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.hub);
+function native(cmd,payload){ try{ window.webkit.messageHandlers.hub.postMessage(Object.assign({cmd},payload||{})); }catch(e){} }
+window.hubFromNative=function(msg){
+  switch(msg.type){
+    case "psStatus":{
+      PS.connected=!!msg.connected;
+      const el=$("#psStatus"); if(el) el.textContent=msg.connected?("connecté : "+(msg.name||"PeekSmith")):"déconnecté";
+      break;
+    }
+    case "psButton": psRoute(+msg.btn); break;
+    case "remoteKey": document.dispatchEvent(new KeyboardEvent("keydown",{key:String(msg.key)})); break;
+    case "speech": feedTranscript(String(msg.text||"")); break;
+    case "speechError":{ const el=$("#fbHint"); if(el) el.textContent="Micro : "+(msg.error||"erreur"); stopVoice(); break; }
+  }
+};
+const buzz = ms => {
+  if(!store.opts.haptic) return;
+  if(NATIVE){ native("haptic",{pattern:Array.isArray(ms)?ms:[ms]}); return; }
+  if(navigator.vibrate) navigator.vibrate(ms);
+};
+const go = url => { if(NATIVE){ native("openURL",{url}); } else { window.location.href=url; } };
+const words = cat => (store.lists[cat]||"").split(",").map(norm).filter(w=>w.length>1);
+
+function show(id){
+  if(S.screen==="fallback" && id!=="fallback" && typeof stopVoice==="function") stopVoice();
+  $$(".screen").forEach(s=>s.classList.remove("on"));
+  $("#"+id).classList.add("on");
+  S.screen=id;
+  const perfIds=["binary","shape","grid","passcode","peek","converge","commut","dobsum"];
+  document.body.classList.toggle("guide", store.opts.guide && perfIds.includes(id));
+  // bouton maison : partout sauf accueil ; sur les écrans perf uniquement en mode guide
+  $("#homeBtn").classList.toggle("on", id!=="home" && (!perfIds.includes(id) || store.opts.guide));
+}
+$("#homeBtn").onclick=()=>{ buzz(15); show("home"); };
+
+/* =====================================================================
+   MOTEUR DE FILTRAGE
+   ===================================================================== */
+
+/* positions (1-indexées) des voyelles d'un mot */
+const vowelPos = w => { const p=[]; for(let i=0;i<w.length;i++) if(isV(w[i])) p.push(i+1); return p; };
+
+/* --- code 6 chiffres --- */
+function parsePasscode(d){
+  // d = tableau de 6 chiffres
+  const lenD = d[0];
+  const len = lenD>=3 ? {min:lenD,max:lenD}
+            : lenD===0 ? {min:10,max:10}
+            : lenD===1 ? {min:11,max:11}
+            : {min:12,max:99}; // 2 = 12+
+  const pos=[]; let mode="maybe";
+  for(let i=1;i<=4;i++){
+    const x=d[i];
+    if(pos.length===0){
+      if(x>=1){pos.push(x)} else {break}
+    } else if(x===0){ mode="maybe"; break; }
+    else if(x>pos[pos.length-1]){ pos.push(x); }
+    else { mode="exact"; break; }
+  }
+  return {len,pos,mode,shape:d[5]};
+}
+function matchPasscode(w,spec){
+  if(w.length<spec.len.min||w.length>spec.len.max) return false;
+  const vp=vowelPos(w);
+  if(spec.pos.length){
+    if(vp.length<spec.pos.length) return false;
+    for(let i=0;i<spec.pos.length;i++) if(vp[i]!==spec.pos[i]) return false;
+    if(spec.mode==="exact" && vp.length!==spec.pos.length) return false;
+  }
+  if(spec.shape>=1&&spec.shape<=3 && !SHAPE[spec.shape].has(w[0])) return false;
+  return true;
+}
+
+/* --- binaire --- */
+function matchBinary(w,seq,shape){
+  if(w.length!==seq.length) return false;
+  let m1=true,m2=true; // A=consonne / A=voyelle : les deux mappings sont testés
+  for(let i=0;i<w.length;i++){
+    const v=isV(w[i]);
+    if((seq[i]==="A")===v) m1=false;   // mapping A=consonne
+    if((seq[i]==="A")!==v) m2=false;   // mapping A=voyelle
+    if(!m1&&!m2) return false;
+  }
+  if(shape>=1&&shape<=3 && !SHAPE[shape].has(w[0])) return false;
+  return true;
+}
+
+/* --- calcul + affichage du peek --- */
+function computePeek(){
+  const pool = words(S.category);
+  let res;
+  if(S.perfMode==="binary"){
+    res = pool.filter(w=>matchBinary(w,S.seq,S.shape));
+  } else {
+    const spec = parsePasscode(S.digits);
+    res = pool.filter(w=>matchPasscode(w,spec));
+  }
+  S.results=[...new Set(res)].sort();
+  S.crib={}; S.results.forEach(w=>S.crib[w[0]]=true);
+  renderPeek(); show("peek");
+  $("#peek").classList.toggle("show", !!store.opts.guide);
+}
+function renderPeek(){
+  const act = S.results.filter(w=>S.crib[w[0]]);
+  const byL={};
+  act.forEach(w=>{ (byL[w[0]]=byL[w[0]]||[]).push(w); });
+  const L=Object.keys(byL).sort();
+  $("#peekList").innerHTML = L.map(l=>
+    `<div class="pl-letter">${l}</div><div class="pl-words">${byL[l].join(", ")}</div>`).join("");
+  $("#peekCount").textContent = act.length? act.length+" RES" : "";
+  $("#peekNone").style.display = S.results.length? "none":"block";
+  $("#peekCrib").innerHTML = Object.keys(S.crib).sort().map(l=>
+    `<b data-l="${l}" class="${S.crib[l]?"":"off"}">${l}</b>`).join("");
+  $$("#peekCrib b").forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); S.crib[b.dataset.l]=!S.crib[b.dataset.l]; renderPeek();
+    $("#peek").classList.add("show");
+  });
+}
+
+/* =====================================================================
+   NAVIGATION & SAISIE
+   ===================================================================== */
+
+/* ---------- home / panels ---------- */
+$$("[data-go]").forEach(el=>el.addEventListener("click",()=>{
+  const t=el.dataset.go;
+  if(t==="binary"||t==="passcode"){ S.effect="enigma"; S.perfMode=t; openGrid(); }
+  else if(t==="prenoms"){
+    S.effect="prenoms"; S.perfMode="binary"; S.category="Prénoms";
+    S.seq=[]; S.shape=0; updBin(); show("binary");
+  }
+  else if(t==="pin"){ startPin(); }
+  else if(t==="anagram"){ openAnagGrid(); }
+  else if(t==="dob"){ openDobGrid(); }
+  else show(t);
+}));
+
+/* ---------- grille catégories ---------- */
+function openGrid(){
+  const c=$("#grid .cats");
+  c.innerHTML = CAT_ORDER.filter(k=>store.lists[k]!==undefined||DEFAULT_LISTS[k])
+    .map(k=>`<div class="cat" data-cat="${k}">${k}<br>(French)</div>`).join("");
+  $$("#grid .cat").forEach(t=>t.onclick=()=>{
+    S.category=t.dataset.cat; S.seq=[]; S.digits=[]; S.shape=0;
+    updBin();
+    buzz(15);
+    if(S.perfMode==="binary"){ show("binary"); } else { updPcDots(); show("passcode"); }
+  });
+  if(store.opts.guide){ $("#grid").classList.add("show"); }
+  else { $("#grid").classList.remove("show"); }
+  show("grid");
+}
+let gridHold=null;
+$("#grid .eye").addEventListener("touchstart",()=>{ $("#grid").classList.add("show"); });
+$("#grid .eye").addEventListener("touchend",()=>{
+  // tap simple = affichage bref ; laisser affiché 4s
+  clearTimeout(gridHold);
+  gridHold=setTimeout(()=>$("#grid").classList.remove("show"),4000);
+});
+
+/* ---------- saisie binaire (zones tactiles) ---------- */
+function updBin(){ $("#binSeq").textContent = S.seq.join(" "); }
+function binInput(x){ S.seq.push(x); buzz(12); updBin(); }
+function binDelete(){ S.seq.pop(); buzz([10,40,10]); updBin(); }
+function binConfirm(){ if(!S.seq.length) return; buzz(40);
+  $("#shapeSeq").textContent = S.seq.join(" "); show("shape"); }
+$("#binUndo").onclick=e=>{ e.stopPropagation(); binDelete(); };
+$("#zA").onclick=()=>binInput("A");
+$("#zB").onclick=()=>binInput("B");
+$("#zConfirm").onclick=binConfirm;
+$("#zS1").onclick=()=>{ if(S.effect==="pin"){pinShape(1);} else {S.shape=1;buzz(40);computePeek();} };
+$("#zS2").onclick=()=>{ if(S.effect==="pin"){pinShape(2);} else {S.shape=2;buzz(40);computePeek();} };
+$("#zS3").onclick=()=>{ if(S.effect==="pin"){pinShape(3);} else {S.shape=3;buzz(40);computePeek();} };
+
+/* ---------- saisie code (remote tape les chiffres, écran noir) ---------- */
+function pcInput(n){
+  S.digits.push(n); buzz(12); updPcDots();
+  if(S.digits.length===6){ setTimeout(computePeek,150); }
+}
+function updPcDots(){
+  $$("#pcDots i").forEach((d,i)=>d.classList.toggle("f", i<S.digits.length));
+  $("#pcDigits").textContent = S.digits.join("");
+}
+$$("#pad b[data-n]").forEach(b=>b.onclick=e=>{ e.stopPropagation(); pcInput(+b.dataset.n); });
+$("#padDel").onclick=e=>{ e.stopPropagation(); S.digits.pop(); updPcDots(); buzz([10,40,10]); };
+
+/* ---------- peek : tap pour afficher/masquer ---------- */
+$("#peek").addEventListener("click",e=>{
+  if(e.target.closest(".crib")||e.target.closest(".pk-bar")) return;
+  $("#peek").classList.toggle("show");
+});
+
+/* ---------- recommencer & fallback ---------- */
+function restart(){
+  S.seq=[]; S.digits=[]; S.shape=0; S.pin=[]; updBin(); updPcDots(); buzz(20);
+  if(S.effect==="prenoms"){ show("binary"); }
+  else if(S.effect==="pin"){ startPin(); }
+  else if(S.effect==="anagram"){ openAnagGrid(); }
+  else if(S.effect==="dob"){ openDobGrid(); }
+  else openGrid();
+}
+$("#pkRestart").onclick=restart;
+$("#pkFallback").onclick=openFallback;
+$("#pkConv").onclick=()=>{
+  const act=S.results.filter(w=>S.crib[w[0]]);
+  if(act.length>1) startConverge(act,"word");
+};
+
+/* =====================================================================
+   ARBRE JTA — builder, sérialisation (compatible permalinks), scans
+   ===================================================================== */
+function tnode(words,minsplit){ return {words,minsplit,L:null,yes:null,no:null}; }
+function treeSplit(node,L){
+  node.L=L;
+  const yes=node.words.filter(w=>w.includes(L)), no=node.words.filter(w=>!w.includes(L));
+  node.no=tnode(no,node.minsplit/2); node.yes=tnode(yes,node.minsplit/2);
+}
+/* préordre JTA : lettre, branche NON, branche OUI ; "." = non développé */
+function treeSerialize(node,out){
+  if(!node||node.words.length<2) return;
+  if(!node.L){ out.push("."); return; }
+  out.push(node.L);
+  treeSerialize(node.no,out); treeSerialize(node.yes,out);
+}
+function treeDeserialize(words,picks){
+  const root=tnode(words, Math.pow(2,Math.max(0,Math.ceil(Math.log2(Math.max(1,words.length)))-1)));
+  let i=0;
+  (function walk(node){
+    if(node.words.length<2||i>=picks.length) return;
+    const c=picks[i++];
+    if(c==="."||!/^[A-Z]$/.test(c)) return;
+    const yes=node.words.filter(w=>w.includes(c)).length;
+    if(yes===0||yes===node.words.length) return; // lettre devenue non-discriminante
+    treeSplit(node,c);
+    walk(node.no); walk(node.yes);
+  })(root);
+  return root;
+}
+/* qualité des lettres façon JTA : bonne si les deux branches tiennent dans minsplit */
+function tbLetterInfo(node){
+  const n=node.words.length, out=[];
+  for(const L of "ABCDEFGHIJKLMNOPQRSTUVWXYZ"){
+    const yes=node.words.filter(w=>w.includes(L)).length;
+    if(yes===0||yes===n) continue;
+    const good = yes<=node.minsplit && (n-yes)<=node.minsplit;
+    out.push({L,yes,n,good});
+  }
+  return out;
+}
+
+let TB=null; // {key, words, root, cur(chemin y/n), hideBad}
+function nodeAt(root,path){ let n=root; for(const p of path){ n = p==="y"?n.yes:n.no; if(!n) return root; } return n; }
+function openTreeb(key){
+  const ag=store.anag; const list=ag[key];
+  const words=list.words.map(norm);
+  TB={key,words,root:treeDeserialize(words,(list.tree||"").split("")),cur:[],hideBad:true};
+  $("#tbTitle").textContent="ARBRE — "+list.name;
+  show("treeb"); tbRender();
+}
+function tbRender(){
+  const node=nodeAt(TB.root,TB.cur);
+  $("#tbCrumb").textContent = "racine" + TB.cur.map((p,i)=>{
+    const anc=nodeAt(TB.root,TB.cur.slice(0,i));
+    return " › "+anc.L+(p==="y"?"✓":"✗");
+  }).join("");
+  $("#tbWords").textContent = node.words.join(", ")||"—";
+  const info=tbLetterInfo(node);
+  $("#tbChips").innerHTML = info
+    .filter(x=>x.good||!TB.hideBad)
+    .map(x=>`<b class="${x.good?"":"warn"}${node.L===x.L?" sel":""}" data-l="${x.L}">${x.L}<small>${x.yes}/${x.n}</small></b>`).join("")
+    || `<span class="hint">DEAD END — décoche «&nbsp;masquer&nbsp;» ou remonte d'un niveau</span>`;
+  $$("#tbChips b").forEach(b=>b.onclick=()=>{
+    treeSplit(node,b.dataset.l); buzz(15); tbRender();
+  });
+  $("#tbHide").classList.toggle("on",TB.hideBad);
+  // chart façon JTA : NON (rouge) en haut, OUI (vert) en bas, lettres en cellules fusionnées
+  function jtHTML(n,edge,path){
+    if(!n) return "";
+    const p=path.join("");
+    const cur = p===TB.cur.join("") ? " jt-cur":"";
+    if(!n.L){
+      const open=n.words.length>1?" jt-open":"";
+      return `<div class="jt-leaf jt-${edge}${open}${cur}" data-p="${p}">${n.words.join(" / ")||"∅"}${n.words.length>1?" …":""}</div>`;
+    }
+    return `<div class="jt-node"><div class="jt-letter jt-${edge}${cur}" data-p="${p}">${n.L}</div>`
+      + `<div class="jt-branches">${jtHTML(n.no,"no",[...path,"n"])}${jtHTML(n.yes,"yes",[...path,"y"])}</div></div>`;
+  }
+  $("#tbTree").innerHTML=jtHTML(TB.root,"root",[]);
+  $$("#tbTree [data-p]").forEach(t=>t.onclick=()=>{ TB.cur=t.dataset.p.split("").filter(c=>c==="y"||c==="n"); tbRender(); });
+}
+$("#tbUp").onclick=()=>{ if(TB.cur.length){ TB.cur.pop(); tbRender(); } };
+$("#tbClear").onclick=()=>{ const n=nodeAt(TB.root,TB.cur); n.L=null;n.yes=null;n.no=null; tbRender(); };
+$("#tbHide").onclick=()=>{ TB.hideBad=!TB.hideBad; tbRender(); };
+function seqSummary(root){
+  const depths=[];
+  (function walk(n,d){
+    if(!n||!n.L) return;
+    (depths[d]=depths[d]||new Set()).add(n.L);
+    walk(n.no,d+1); walk(n.yes,d+1);
+  })(root,0);
+  if(!depths.length) return null;
+  return {fixed:depths.every(s=>s.size===1), parts:depths.map(s=>[...s].join("/"))};
+}
+function seqGraph(root){
+  const s=seqSummary(root);
+  if(!s) return "";
+  if(s.fixed)
+    return "<div style='margin-top:6px'>Séquence fixe à réciter : <b style='color:var(--amber);letter-spacing:.2em'>"
+      + s.parts.join(" · ")+"</b></div>";
+  const lines=[];
+  (function walk(n,steps,path){
+    if(!n) return;
+    if(!n.L){ lines.push({steps,word:n.words.join("/")||"∅",path:[...path]}); return; }
+    walk(n.yes,[...steps,{L:n.L,a:true}],[...path,"y"]);
+    walk(n.no,[...steps,{L:n.L,a:false}],[...path,"n"]);
+  })(root,[],[]);
+  return lines.map(l=>
+    `<div class="sq-line" data-sqp="${l.path.join("")}">`
+    + l.steps.map(st=>`<b class="sq-l">${st.L}</b><span class="sq-ar ${st.a?"y":"n"}">${st.a?"OUI":"NON"}&rarr;</span>`).join("")
+    + `<b class="sq-word">${l.word}</b></div>`).join("")
+    + "<div class='hint' style='margin-top:6px'>Chaque ligne = un scénario complet, à lire de gauche à droite : je dis la lettre, la réponse (verte = OUI, rouge = NON) m'amène à la suivante, jusqu'au mot. Tap sur une ligne = voir dans le chart.</div>";
+}
+function showSeqOut(prefix,root){
+  $("#tbScanOut").innerHTML=prefix+seqGraph(root);
+  $$("#tbScanOut .sq-line").forEach(c=>c.onclick=()=>{
+    TB.cur=c.dataset.sqp.split("").filter(x=>x==="y"||x==="n");
+    tbRender(); buzz(10);
+  });
+}
+$("#tbSave").onclick=()=>{
+  const out=[]; treeSerialize(TB.root,out);
+  const ag=store.anag; ag[TB.key].tree=out.join("").replace(/\.+$/,""); store.anag=ag;
+  buzz(30);
+  showSeqOut("Arbre enregistré.",TB.root);
+};
+$("#tbImport").addEventListener("change",()=>{
+  try{
+    const u=new URL($("#tbImport").value.trim());
+    const p=new URLSearchParams(u.search);
+    const words=(p.get("words")||"").replace(/,/g,"\n").split("\n").map(norm).filter(w=>w.length>1);
+    const picks=(p.get("picks")||"").toUpperCase().replace(/[^A-Z.]/g,"");
+    if(words.length){
+      const ag=store.anag;
+      ag[TB.key].words=words; ag[TB.key].tree=picks; store.anag=ag; mmMemo.clear();
+      openTreeb(TB.key);
+      $("#tbScanOut").textContent="Permalink importé : "+words.length+" mots"+(picks?", arbre inclus.":".");
+    }
+  }catch(e){ $("#tbScanOut").textContent="Lien invalide."; }
+});
+/* appliquer une séquence fixe de lettres à l'arbre (chaque branche saute les non-discriminantes) */
+function seqToTree(seq){
+  const root=tnode(TB.words, Math.pow(2,Math.max(0,Math.ceil(Math.log2(Math.max(1,TB.words.length)))-1)));
+  (function walk(node,idx){
+    if(node.words.length<2) return;
+    for(let i=idx;i<seq.length;i++){
+      const L=seq[i];
+      const yes=node.words.filter(w=>w.includes(L)).length;
+      if(yes===0||yes===node.words.length) continue;
+      treeSplit(node,L);
+      walk(node.no,i+1); walk(node.yes,i+1);
+      return;
+    }
+  })(root,0);
+  return root;
+}
+function applySeq(s){
+  TB.root=seqToTree(s.split("")); TB.cur=[]; tbRender();
+  $("#tbScanOut").innerHTML="Séquence <b style='color:var(--amber)'>"+s.split("").join(" ")
+    +"</b> appliquée à l'arbre — «&nbsp;Enregistrer l'arbre&nbsp;» pour la garder.";
+}
+function renderScanResults(label,seqs,extra){
+  $("#tbScanOut").innerHTML=label+" — tap pour l'appliquer à l'arbre :<br>"
+    + seqs.map(s=>`<b class="scan-apply" data-s="${s}" style="color:var(--amber);margin-right:12px">${s.split("").join(" ")}</b>`).join("")
+    + (extra||"");
+  $$("#tbScanOut .scan-apply").forEach(b=>b.onclick=()=>applySeq(b.dataset.s));
+}
+/* scans JTA : séquence identique sur toutes les branches (parfait) / lettres à 1 hit (silencieux) */
+function tbScan(silent){
+  const words=TB.words; let steps=0, results=[], aborted=false;
+  const minsplit0=Math.pow(2,Math.max(0,Math.ceil(Math.log2(words.length))-1));
+  function rec(nodes,seq){
+    if(++steps>200000){ aborted=true; return; }
+    if(results.length>=20) return;
+    const inc=nodes.filter(n=>n.words.length>1);
+    if(!inc.length){ results.push(seq.join("")); return; }
+    let possible=null;
+    for(const n of inc){
+      const set=new Set();
+      for(const L of "ABCDEFGHIJKLMNOPQRSTUVWXYZ"){
+        const yes=n.words.filter(w=>w.includes(L)).length;
+        if(silent){ if(yes===1) set.add(L); }
+        else if(yes>0&&yes<n.words.length&&yes<=n.minsplit&&(n.words.length-yes)<=n.minsplit) set.add(L);
+      }
+      possible = possible===null ? set : new Set([...possible].filter(L=>set.has(L)));
+      if(!possible.size) return;
+    }
+    for(const L of possible){
+      if(aborted||results.length>=20) return;
+      const next=[];
+      for(const n of inc){
+        next.push(tnode(n.words.filter(w=>w.includes(L)),n.minsplit/2));
+        next.push(tnode(n.words.filter(w=>!w.includes(L)),n.minsplit/2));
+      }
+      rec(next,[...seq,L]);
+    }
+  }
+  rec([tnode(words,minsplit0)],[]);
+  if(results.length){
+    renderScanResults((silent?"Silencieux":"Parfait strict"),results.slice(0,10),aborted?" (scan partiel)":"");
+    return;
+  }
+  if(!silent){
+    // pas de parfait strict → séquences fixes commutatives (mêmes lettres, ordre fixe, juste plus longues)
+    const sets=findCommutSets(6);
+    if(sets.length){
+      renderScanResults("Pas de parfait strict — séquences fixes (commutatives, "+sets[0].length+" lettres)",sets.map(s=>s.join("")));
+      return;
+    }
+  }
+  $("#tbScanOut").textContent="Aucune séquence trouvée"+(aborted?" (scan interrompu — liste trop large)":".");
+}
+$("#tbPerfect").onclick=()=>tbScan(false);
+$("#tbSilent").onclick=()=>tbScan(true);
+
+/* scan commutatif : plus petit ensemble de lettres aux signatures toutes uniques */
+function sigOf(w,set){ return set.filter(L=>w.includes(L)).join(""); }
+function findCommutSets(maxResults){
+  const words=TB.words;
+  const letters=[..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].filter(L=>{
+    const y=words.filter(w=>w.includes(L)).length; return y>0&&y<words.length;
+  });
+  const kmin=Math.max(1,Math.ceil(Math.log2(words.length)));
+  const found=[];
+  let steps=0, aborted=false;
+  function comb(arr,k,start,acc){
+    if(aborted||found.length>=maxResults) return;
+    if(++steps>400000){ aborted=true; return; }
+    if(acc.length===k){
+      const sigs=new Set(words.map(w=>sigOf(w,acc)));
+      if(sigs.size===words.length) found.push([...acc]);
+      return;
+    }
+    for(let i=start;i<=arr.length-(k-acc.length);i++){
+      comb(arr,k,i+1,[...acc,arr[i]]);
+      if(aborted||found.length>=maxResults) return;
+    }
+  }
+  let k=kmin;
+  while(!found.length && k<=Math.min(9,letters.length) && !aborted){
+    comb(letters,k,0,[]); if(!found.length) k++;
+  }
+  return found;
+}
+function commutScan(){
+  const found=findCommutSets(6);
+  if(!found.length){
+    $("#tbScanOut").textContent="Aucun set commutatif ≤ 9 lettres.";
+    return;
+  }
+  $("#tbScanOut").innerHTML="Commutatif ("+found[0].length+" lettres) — tap pour enregistrer + voir l'arbre :<br>"
+    + found.map(s=>`<b class="cm-save" data-s="${s.join("")}" style="color:var(--amber);margin-right:12px">${s.join(" ")}</b>`).join("");
+  $$("#tbScanOut .cm-save").forEach(b=>b.onclick=()=>{
+    const ag=store.anag; ag[TB.key].commut=b.dataset.s; store.anag=ag; buzz(30);
+    applySeq(b.dataset.s);
+    $("#tbScanOut").innerHTML="Set commutatif <b style='color:var(--amber)'>"+b.dataset.s.split("").join(" ")
+      +"</b> enregistré (mode ordre libre actif) et appliqué à l'arbre ci-dessus — «&nbsp;Enregistrer l'arbre&nbsp;» pour garder aussi la version arbre.";
+  });
+}
+$("#tbCommut").onclick=commutScan;
+
+/* =====================================================================
+   GÉNÉRATEURS AUTO (façon Magic Oval) — arbres exacts mémoïsés
+   ===================================================================== */
+const paMemo=new Map(), flMemo=new Map();
+function keyOf(c){ return c.slice().sort().join(","); }
+function splits(cands){
+  const out=[];
+  for(const L of "ABCDEFGHIJKLMNOPQRSTUVWXYZ"){
+    const yes=cands.filter(w=>w.includes(L));
+    if(!yes.length||yes.length===cands.length) continue;
+    out.push({L,yes,no:cands.filter(w=>!w.includes(L))});
+  }
+  return out;
+}
+/* max de NON sur le pire chemin (progressif) */
+function paCost(cands){
+  if(cands.length<=1) return 0;
+  const k=keyOf(cands);
+  if(paMemo.has(k)) return paMemo.get(k);
+  paMemo.set(k,99);
+  let best=99;
+  for(const s of splits(cands)){
+    const d=Math.max(paCost(s.yes), 1+paCost(s.no));
+    if(d<best) best=d;
+    if(best===0) break;
+  }
+  paMemo.set(k,best); return best;
+}
+/* max de NON après le premier OUI (frontloaded) */
+function flCost(cands,after){
+  if(cands.length<=1) return 0;
+  const k=keyOf(cands)+"|"+after;
+  if(flMemo.has(k)) return flMemo.get(k);
+  flMemo.set(k,99);
+  let best=99;
+  for(const s of splits(cands)){
+    const d=Math.max(flCost(s.yes,true), flCost(s.no,after)+(after?1:0));
+    if(d<best) best=d;
+    if(best===0) break;
+  }
+  flMemo.set(k,best); return best;
+}
+function genTree(mode){
+  const words=TB.words;
+  if(words.length>18){ $("#tbScanOut").textContent="Liste trop large pour la génération exacte (max 18) — utilise l'arbre manuel ou la stratégie live."; return; }
+  paMemo.clear(); flMemo.clear(); mmMemo.clear();
+  const usedGlobal=new Set();
+  const root=tnode(words, Math.pow(2,Math.max(0,Math.ceil(Math.log2(Math.max(1,words.length)))-1)));
+  (function build(node,after){
+    if(node.words.length<2) return;
+    const opts=splits(node.words).map(s=>{
+      let primary;
+      if(mode==="pa") primary=Math.max(paCost(s.yes),1+paCost(s.no));
+      else if(mode==="fpa") primary=Math.max(flCost(s.yes,true),flCost(s.no,after)+(after?1:0));
+      else primary=1+Math.max(mmDepth(s.yes),mmDepth(s.no)); // TA
+      return {s,primary};
+    });
+    const best=Math.min(...opts.map(o=>o.primary));
+    let pool=opts.filter(o=>o.primary===best);
+    // tie-breaks
+    if(mode==="tah"||mode==="pa"||mode==="fpa"){
+      const reused=pool.filter(o=>usedGlobal.has(o.s.L));
+      if(reused.length) pool=reused;              // homogène : réutiliser les lettres
+    } else if(mode==="tad"){
+      const fresh=pool.filter(o=>!usedGlobal.has(o.s.L));
+      if(fresh.length) pool=fresh;                // divers : lettres nouvelles
+    }
+    if(mode==="pa"||mode==="fpa") pool.sort((a,b)=>b.s.yes.length-a.s.yes.length); // max de OUI
+    else pool.sort((a,b)=>Math.abs(a.s.yes.length*2-node.words.length)-Math.abs(b.s.yes.length*2-node.words.length)); // équilibre
+    const pick=pool[0].s;
+    usedGlobal.add(pick.L);
+    treeSplit(node,pick.L);
+    build(node.no, mode==="fpa"?after:after);
+    build(node.yes, true);
+  })(root,false);
+  TB.root=root; TB.cur=[]; tbRender();
+  // stats
+  let depth=0,maxNo=0; const letters=new Set();
+  (function stat(n,d,nn){
+    if(!n) return;
+    if(!n.L){ depth=Math.max(depth,d); maxNo=Math.max(maxNo,nn); return; }
+    letters.add(n.L);
+    stat(n.no,d+1,nn+1); stat(n.yes,d+1,nn);
+  })(root,0,0);
+  const names={tad:"TA Divers",tah:"TA Homogène",pa:"Progressif",fpa:"Frontloaded"};
+  showSeqOut(names[mode]+" généré — "+depth+" questions max, "
+    +maxNo+" NON max, "+letters.size+" lettres distinctes. «\u00A0Enregistrer l'arbre\u00A0» pour le garder.",root);
+}
+$$("[data-gen]").forEach(b=>b.onclick=()=>genTree(b.dataset.gen));
+
+/* =====================================================================
+   ENTRAÎNEMENT — l'app joue le spectateur sur l'arbre courant
+   ===================================================================== */
+let PR=null;
+function openPractice(){
+  if(!TB || !TB.root.L){
+    $("#tbScanOut").textContent="Construis ou génère d'abord un arbre (au moins une lettre à la racine).";
+    return;
+  }
+  show("practice");
+  $("#prKeys").innerHTML=[..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].map(L=>`<b data-k="${L}">${L}</b>`).join("");
+  $$("#prKeys b").forEach(b=>b.onclick=()=>prAsk(b.dataset.k));
+  prNew();
+}
+function prNew(){
+  const help=PR?PR.help:true;
+  PR={secret:TB.words[Math.floor(Math.random()*TB.words.length)],node:TB.root,q:0,err:0,help,done:false,asked:new Set()};
+  $("#prAns").textContent="—"; $("#prAns").className="pr-ans";
+  $("#prOut").textContent="Mot secret tiré. Pose tes questions de mémoire.";
+  $("#prWords").innerHTML="";
+  $("#prHelp").classList.toggle("on",help);
+  prStat();
+  $$("#prKeys b").forEach(b=>b.classList.remove("dim"));
+}
+function prStat(){
+  $("#prStat").textContent="Questions : "+PR.q+"  ·  Écarts à l'arbre : "+PR.err;
+}
+function prAsk(L){
+  if(!PR||PR.done) return;
+  if(PR.asked.has(L)) return;
+  PR.asked.add(L); PR.q++;
+  const yes=PR.secret.includes(L);
+  $("#prAns").textContent=yes?"OUI":"NON";
+  $("#prAns").className="pr-ans "+(yes?"y":"n");
+  buzz(yes?20:[15,40,15]);
+  $$("#prKeys b").forEach(b=>{ if(b.dataset.k===L) b.classList.add("dim"); });
+  let fb="";
+  if(PR.node && PR.node.L){
+    if(L===PR.node.L){
+      PR.node = yes ? PR.node.yes : PR.node.no;
+      if(PR.help) fb="✓ conforme à l'arbre";
+      if(PR.node && !PR.node.L && PR.node.words.length===1 && PR.help)
+        fb+=" — l'arbre est résolu, révèle !";
+    } else {
+      PR.err++;
+      if(PR.help) fb="✗ l'arbre attendait « "+PR.node.L+" »";
+    }
+  } else if(PR.help){
+    fb="(au-delà de l'arbre)";
+  }
+  $("#prOut").textContent=fb;
+  prStat();
+}
+$("#prReveal").onclick=()=>{
+  if(!PR||PR.done) return;
+  $("#prOut").textContent="Quel est le mot ?";
+  $("#prWords").innerHTML=TB.words.slice().sort().map(w=>`<b data-w="${w}">${w}</b>`).join("");
+  $$("#prWords b").forEach(t=>t.onclick=()=>{
+    if(PR.done) return;
+    PR.done=true;
+    const ok=t.dataset.w===PR.secret;
+    buzz(ok?[30,60,30]:[80,40,80]);
+    $("#prOut").textContent = ok
+      ? "✓ C'était bien "+PR.secret+" — "+PR.q+" questions, "+PR.err+" écart(s) à l'arbre."
+      : "✗ Raté. C'était "+PR.secret+" ("+PR.q+" questions, "+PR.err+" écart(s)).";
+  });
+};
+$("#prNew").onclick=prNew;
+$("#prHelp").onclick=()=>{ PR.help=!PR.help; $("#prHelp").classList.toggle("on",PR.help); };
+$("#tbPractice").onclick=openPractice;
+
+/* ---------- perf commutative : ordre libre ---------- */
+let CM=null; // {set, st:{L:true|false}, cands0}
+function startCommut(cands){
+  CM={set:ANAG.list.commut.split(""),st:{},cands0:cands};
+  show("commut"); cmRender();
+}
+function cmRender(){
+  const cands=CM.cands0.filter(w=>CM.set.every(L=>CM.st[L]===undefined || w.includes(L)===CM.st[L]));
+  $("#cmCount").textContent=cands.length+" restants";
+  $("#cmChips").innerHTML=CM.set.map(L=>{
+    const st=CM.st[L]; return `<b class="${st===true?"y":st===false?"n":""}" data-l="${L}">${L}</b>`;
+  }).join("");
+  $$("#cmChips b").forEach(b=>b.onclick=()=>{
+    const L=b.dataset.l;
+    CM.st[L] = CM.st[L]===undefined ? true : CM.st[L]===true ? false : undefined;
+    buzz(12); cmRender();
+  });
+  $("#cmCands").textContent = store.opts.guide ? cands.slice(0,18).join("  ") : "";
+  if(cands.length===1){
+    $("#cmFinal").textContent=cands[0];
+    psSend("= "+cands[0]);
+  } else {
+    $("#cmFinal").textContent = cands.length===0 ? "∅" : "";
+    if(cands.length>1) psSend(cands.length+" restants");
+  }
+}
+$("#cmReset").onclick=e=>{ e.stopPropagation(); CM.st={}; buzz([10,40,10]); cmRender(); };
+$("#cmToTree").onclick=e=>{
+  e.stopPropagation();
+  const cands=CM.cands0.filter(w=>CM.set.every(L=>CM.st[L]===undefined || w.includes(L)===CM.st[L]));
+  const keep=CM; CM=null;
+  CVSTART_FROM_COMMUT(cands.length?cands:keep.cands0);
+};
+function CVSTART_FROM_COMMUT(cands){
+  const tree = ANAG.list.tree ? treeDeserialize(ANAG.list.words.map(norm), ANAG.list.tree.split("")) : null;
+  CV={cands,mode:"anagram",hist:[],asked:new Set(),q:null,noCount:0,tnode:tree};
+  show("converge"); cvAsk();
+}
+/* tap sur le résultat final = envoi au peek */
+$("#cmFinal").addEventListener("click",()=>{
+  if($("#cmFinal").textContent && $("#cmFinal").textContent!=="∅"){
+    anagResult($("#cmFinal").textContent,false); CM=null;
+  }
+});
+
+/* =====================================================================
+   MOTEUR ANAGRAMME (façon JTA) — 3 stratégies + minimax exact
+   ===================================================================== */
+const uniqL = w => [...new Set(norm(w))].join("");
+
+/* profondeur minimax exacte (nb max de questions), mémoïsée sur l'ensemble */
+const mmMemo = new Map();
+function mmDepth(cands){
+  if(cands.length<=1) return 0;
+  const key=cands.slice().sort().join(",");
+  if(mmMemo.has(key)) return mmMemo.get(key);
+  mmMemo.set(key,99); // garde anti-cycle
+  let best=99;
+  for(const L of "ABCDEFGHIJKLMNOPQRSTUVWXYZ"){
+    const yes=cands.filter(c=>c.includes(L));
+    if(!yes.length||yes.length===cands.length) continue;
+    const no=cands.filter(c=>!c.includes(L));
+    const d=1+Math.max(mmDepth(yes),mmDepth(no));
+    if(d<best) best=d;
+    if(best===1) break;
+  }
+  mmMemo.set(key,best);
+  return best;
+}
+
+/* choix de la prochaine lettre selon la stratégie */
+function pickLetter(cands, exclude){
+  const strat=store.opts.strat||"transgressive";
+  const n=cands.length;
+  const exact = n<=16; // minimax exact pour les petits ensembles
+  let best=null,bestKey=null;
+  for(const L of "ABCDEFGHIJKLMNOPQRSTUVWXYZ"){
+    if(exclude&&exclude.has(L)) continue;
+    const yes=cands.filter(c=>c.includes(L)).length;
+    if(yes===0||yes===n) continue;
+    const no=n-yes;
+    let key;
+    if(strat==="balanced"){ key=[-Math.min(yes,no)]; }
+    else if(strat==="maxyes"){
+      const d=exact?1+Math.max(mmDepth(cands.filter(c=>c.includes(L))),mmDepth(cands.filter(c=>!c.includes(L)))):Math.max(yes,no);
+      key=[-yes,d]; // max de OUI, puis arbre le plus court
+    } else { // transgressive : profondeur minimale, puis max de OUI
+      const d=exact?1+Math.max(mmDepth(cands.filter(c=>c.includes(L))),mmDepth(cands.filter(c=>!c.includes(L)))):Math.max(yes,no);
+      key=[d,-yes];
+    }
+    if(!bestKey || key[0]<bestKey[0] || (key[0]===bestKey[0]&&key[1]<bestKey[1])){ bestKey=key; best=L; }
+  }
+  return best;
+}
+
+/* mots aux lettres identiques = indissociables par anagramme */
+function anagDupes(words){
+  const seen={},dupes=[];
+  words.forEach(w=>{ const k=uniqL(w); (seen[k]=seen[k]||[]).push(w); });
+  Object.values(seen).forEach(g=>{ if(g.length>1) dupes.push(g.join("/")); });
+  return dupes;
+}
+
+function findExitHook(filtered,hooks){
+  if(!hooks||filtered.length<2) return null;
+  return hooks.find(h=>{
+    const hw=h.words.map(norm);
+    return filtered.every(w=>hw.includes(w));
+  })||null;
+}
+
+/* =====================================================================
+   MODULE ANAGRAMMES — grille de listes, hooks, questions, exit hooks
+   ===================================================================== */
+let ANAG={listKey:null,list:null,hookIdx:0,eliminated:[]};
+
+function openAnagGrid(){
+  S.effect="anagram";
+  const a=store.anag;
+  const c=$("#grid .cats");
+  c.innerHTML = Object.keys(a).map(k=>{
+    const d=anagDupes(a[k].words);
+    return `<div class="cat" data-anag="${k}">${a[k].name}<br>(${a[k].words.length})${a[k].commut?" &copy;":""}${d.length?"<br>&#9888; "+d.length+" doublon(s)":""}</div>`;
+  }).join("");
+  $$("#grid .cat").forEach(t=>t.onclick=()=>{
+    buzz(15); startAnag(t.dataset.anag);
+  });
+  if(store.opts.guide){ $("#grid").classList.add("show"); } else { $("#grid").classList.remove("show"); }
+  show("grid");
+}
+function startAnag(key){
+  const a=store.anag;
+  ANAG={listKey:key,list:a[key],hookIdx:0,eliminated:[]};
+  S.category=null;
+  if(ANAG.list.hooks&&ANAG.list.hooks.length){ startHooks(); }
+  else startAnagQuestions(ANAG.list.words.map(norm));
+}
+function startHooks(){
+  CV={cands:[],mode:"hook",hist:[],asked:new Set(),q:null};
+  show("converge"); hookAsk();
+}
+function hookAsk(){
+  const h=ANAG.list.hooks[ANAG.hookIdx];
+  $("#converge").classList.remove("cv-final");
+  $("#cvCount").textContent="HOOK "+(ANAG.hookIdx+1)+"/"+ANAG.list.hooks.length;
+  $("#cvQ").textContent=h.phrase;
+  $("#cvCands").textContent=(store.opts.guide&&h.note)?("["+h.word+"] "+h.note):"";
+}
+function hookAnswer(hit){
+  const h=ANAG.list.hooks[ANAG.hookIdx];
+  buzz(hit?[20,50,20]:12);
+  if(hit){ anagResult(norm(h.word),true); return; }
+  ANAG.eliminated.push(norm(h.word));
+  ANAG.hookIdx++;
+  if(ANAG.hookIdx<ANAG.list.hooks.length){ hookAsk(); }
+  else startAnagQuestions(ANAG.list.words.map(norm).filter(w=>!ANAG.eliminated.includes(w)));
+}
+function hookSkip(){ startAnagQuestions(ANAG.list.words.map(norm)); }
+function startAnagQuestions(cands){
+  if(ANAG.list.commut && (store.opts.commutPref!==false)){ startCommut(cands); return; }
+  const tree = ANAG.list.tree ? treeDeserialize(ANAG.list.words.map(norm), ANAG.list.tree.split("")) : null;
+  CV={cands,mode:"anagram",hist:[],asked:new Set(),q:null,noCount:0,tnode:tree};
+  show("converge"); cvAsk();
+}
+function anagResult(word,wasHook){
+  CV=null;
+  if(S.effect==="dob"&&DOB&&DOB.viaAnag&&ZR[word]){ startDobDay(word); return; }
+  S.results=[word]; S.crib={[word[0]]:true};
+  renderPeek(); show("peek");
+  $("#peek").classList.toggle("show", !!store.opts.guide);
+  psSend("= "+word);
+}
+function openExitHook(hook,filtered){
+  $("#ehPhrase").textContent=hook.phrase;
+  $("#ehWords").innerHTML=filtered.map(w=>{
+    const d=hook.distinction?(hook.distinction[w]||hook.distinction[w.toLowerCase()]||""):"";
+    return `<div class="eh-word" data-w="${w}"><b>${w}</b>${d?`<small>${d}</small>`:""}</div>`;
+  }).join("");
+  $$("#ehWords .eh-word").forEach(t=>t.onclick=()=>{ buzz(30); anagResult(t.dataset.w,false); });
+  show("exithook");
+}
+$("#ehContinue").onclick=()=>{ show("converge"); cvAsk(); };
+$("#ehBack").onclick=()=>{ show("converge"); cvAsk(); };
+
+/* =====================================================================
+   PEEKSMITH — Web Bluetooth (porté de Mentagram)
+   ===================================================================== */
+const PS={connected:false,char:null,device:null};
+const PS_SERVICE_HM10="0000ffe0-0000-1000-8000-00805f9b34fb";
+const PS_SERVICE_1="8d53dc1d-1db7-4cd3-868b-8a527460aa84";
+const PS_CHAR_DATA="0000ffe1-0000-1000-8000-00805f9b34fb";
+function psRoute(btn){ // 1=OUI 2=NON 0=passer
+  if(S.screen!=="converge"||!CV) return;
+  if(CV.mode==="hook"){ btn===1?hookAnswer(true):btn===2?hookAnswer(false):hookSkip(); }
+  else { btn===1?cvAnswer(true):btn===2?cvAnswer(false):cvSkipQ(); }
+}
+function psData(ev){
+  const t=new TextDecoder().decode(ev.target.value);
+  if(t.includes("isb1,click")) psRoute(1);
+  else if(t.includes("isb2,click")) psRoute(2);
+  else if(t.includes("isb0,click")) psRoute(0);
+}
+async function psConnect(){
+  if(NATIVE){ $("#psStatus").textContent="recherche…"; native("psConnect"); return; }
+  if(!navigator.bluetooth){ $("#psStatus").textContent="Web Bluetooth indisponible (Bluefy sur iOS)"; return; }
+  try{
+    $("#psStatus").textContent="recherche…";
+    const device=await navigator.bluetooth.requestDevice({filters:[{namePrefix:"PeekSmith"}],optionalServices:[PS_SERVICE_1,PS_SERVICE_HM10]});
+    device.addEventListener("gattserverdisconnected",()=>{PS.connected=false;PS.char=null;$("#psStatus").textContent="déconnecté";});
+    const server=await device.gatt.connect();
+    try{
+      const svc=await server.getPrimaryService(PS_SERVICE_HM10);
+      const ch=await svc.getCharacteristic(PS_CHAR_DATA);
+      await ch.startNotifications(); ch.addEventListener("characteristicvaluechanged",psData);
+      PS.char=ch;
+    }catch(e){
+      const svc=await server.getPrimaryService(PS_SERVICE_1);
+      const chars=await svc.getCharacteristics();
+      for(const c of chars){
+        if(c.properties.notify){ await c.startNotifications(); c.addEventListener("characteristicvaluechanged",psData); }
+        if(c.properties.write||c.properties.writeWithoutResponse) PS.char=c;
+      }
+    }
+    PS.device=device; PS.connected=true;
+    $("#psStatus").textContent="connecté : "+device.name;
+  }catch(e){ $("#psStatus").textContent="erreur : "+(e.message||e); }
+}
+async function psSend(text){
+  if(NATIVE){ if(PS.connected) native("psSend",{text}); return; }
+  if(!PS.connected||!PS.char) return;
+  try{
+    const d=new TextEncoder().encode(text);
+    PS.char.properties&&PS.char.properties.writeWithoutResponse ? await PS.char.writeValueWithoutResponse(d) : await PS.char.writeValue(d);
+  }catch(e){}
+}
+$("#psBtn").onclick=psConnect;
+
+/* =====================================================================
+   MODULE DATE DE NAISSANCE — signe puis dichotomie sur le jour
+   ===================================================================== */
+const ZR={BELIER:[[3,21],[4,19]],TAUREAU:[[4,20],[5,20]],GEMEAUX:[[5,21],[6,20]],
+  CANCER:[[6,21],[7,22]],LION:[[7,23],[8,22]],VIERGE:[[8,23],[9,22]],
+  BALANCE:[[9,23],[10,22]],SCORPION:[[10,23],[11,21]],SAGITTAIRE:[[11,22],[12,21]],
+  CAPRICORNE:[[12,22],[1,19]],VERSEAU:[[1,20],[2,18]],POISSONS:[[2,19],[3,20]]};
+const MOIS=["","JANVIER","FEVRIER","MARS","AVRIL","MAI","JUIN","JUILLET","AOUT","SEPTEMBRE","OCTOBRE","NOVEMBRE","DECEMBRE"];
+function dobDates(sign){
+  const r=ZR[sign]; if(!r) return [];
+  const dim={1:31,2:29,3:31,4:30,5:31,6:30,7:31,8:31,9:30,10:31,11:30,12:31};
+  const out=[]; let m=r[0][0], d=r[0][1]; const me=r[1][0], de=r[1][1];
+  while(out.length<45){
+    out.push(d+" "+MOIS[m]);
+    if(m===me&&d===de) break;
+    d++; if(d>dim[m]){ d=1; m=(m===12?1:m+1); }
+  }
+  return out;
+}
+let DOB=null;
+function openDobGrid(){
+  S.effect="dob"; DOB={};
+  const c=$("#grid .cats");
+  c.innerHTML = Object.keys(ZR).map(k=>`<div class="cat" data-dob="${k}">${k}</div>`).join("")
+    + `<div class="cat" data-dobanag="1" style="color:#8fbf8f">via<br>ANAGRAMMES</div>`;
+  $$("#grid .cat[data-dob]").forEach(t=>t.onclick=()=>{ buzz(15); startDobDay(t.dataset.dob); });
+  const va=$("#grid .cat[data-dobanag]");
+  if(va) va.onclick=()=>{ buzz(15); DOB.viaAnag=true; startAnag("zodiac"); };
+  if(store.opts.guide){ $("#grid").classList.add("show"); } else { $("#grid").classList.remove("show"); }
+  show("grid");
+}
+function startDobDay(sign){
+  DOB=DOB||{}; DOB.sign=norm(sign); DOB.stage=1;
+  $("#dsQ").innerHTML="Réduisez le jour de votre naissance à un seul chiffre&hellip; un 25 devient 7. Vous obtenez&nbsp;?";
+  $("#dsHint").textContent="nombres maîtres 11/22 : s'ils ne réduisent pas jusqu'au bout";
+  show("dobsum");
+}
+const dayOf = label => parseInt(label,10);
+const monthOf = label => MOIS.indexOf(label.split(" ")[1]);
+const reduce9 = d => ((d-1)%9)+1;
+function dobSum(n){
+  buzz(20);
+  if(DOB.stage===1){
+    const all=dobDates(DOB.sign);
+    let cands;
+    if(n===11) cands=all.filter(l=>[11,29].includes(dayOf(l)));
+    else if(n===22) cands=all.filter(l=>dayOf(l)===22);
+    else cands=all.filter(l=>reduce9(dayOf(l))===n);
+    if(!cands.length){ $("#dsQ").textContent="Aucun jour du signe ne donne "+n+" — vérifie le signe ou refais réduire."; return; }
+    if(cands.length===1){ dobResult(cands[0]); return; }
+    DOB.c1=cands; DOB.stage=2;
+    $("#dsQ").innerHTML="Ajoutez maintenant le numéro du mois — mars c'est 3 — et réduisez encore. Vous obtenez&nbsp;?";
+    $("#dsHint").textContent="tap long en bas = passer aux questions";
+    return;
+  }
+  // étape 2 : nombre du moment (jour + mois réduit)
+  const v = n===11?2 : n===22?4 : n;
+  const cands=DOB.c1.filter(l=>reduce9(dayOf(l)+monthOf(l))===v);
+  if(!cands.length){ $("#dsQ").textContent="Ça ne colle pas ("+v+") — refais calculer, ou tap bas pour passer aux questions."; return; }
+  if(cands.length===1){ dobResult(cands[0]); return; }
+  dobConverge(cands);
+}
+function dobConverge(cands){
+  CV={cands,mode:"date",hist:[],asked:new Set(),q:null};
+  show("converge"); cvAsk();
+}
+function dobResult(label){
+  CV=null;
+  S.results=[label]; S.crib={[label[0]]:true};
+  renderPeek(); show("peek");
+  $("#peek").classList.toggle("show", !!store.opts.guide);
+  psSend("= "+label);
+}
+$$("#dsKeys b").forEach(b=>b.onclick=()=>dobSum(+b.dataset.d));
+$("#dsHint").onclick=()=>{ if(DOB&&DOB.stage===2&&DOB.c1) dobConverge(DOB.c1); };
+/* questions thématiques (saveur numérologie) — choix par minimax exact */
+const DAY_FEATS=[
+  {k:"1chiffre", t:"Le jour tient en un seul chiffre ?", f:d=>d<10},
+  {k:"pair",     t:"Le jour est-il un nombre pair ?", f:d=>d%2===0},
+  {k:"double",   t:"Ses deux chiffres sont-ils identiques ?", f:d=>d===11||d===22},
+  {k:"fin",      t:"Plutôt la fin du mois — après le 20 ?", f:d=>d>20},
+  {k:"debut",    t:"Tout début de mois — avant le 5 ?", f:d=>d<5}
+];
+function dateSplits(c){
+  const out=[];
+  for(const ft of DAY_FEATS){
+    const yes=c.filter(l=>ft.f(dayOf(l)));
+    if(yes.length&&yes.length<c.length) out.push({key:ft.k,t:ft.t,f:l=>ft.f(dayOf(l)),yes,no:c.filter(l=>!ft.f(dayOf(l)))});
+  }
+  for(let m=1;m<c.length;m++){
+    const before=new Set(c.slice(0,m));
+    out.push({key:"med"+c[m],t:"Né(e) avant le "+c[m]+" ?",f:x=>before.has(x),yes:c.slice(0,m),no:c.slice(m)});
+  }
+  return out;
+}
+function dateDepth(c){
+  if(c.length<=1) return 0;
+  let best=9;
+  for(const s of dateSplits(c)){
+    const d=1+Math.max(dateDepth(s.yes),dateDepth(s.no));
+    if(d<best) best=d;
+    if(best===1) break;
+  }
+  return best;
+}
+function bestDateQ(){
+  const c=CV.cands;
+  if(c.length<2) return null;
+  let best=null,bd=9;
+  for(const s of dateSplits(c)){
+    if(CV.asked.has(s.key)) continue;
+    const d=1+Math.max(dateDepth(s.yes),dateDepth(s.no));
+    // à profondeur égale, préférer les questions thématiques (pas la médiane)
+    const themed=!s.key.startsWith("med");
+    if(d<bd || (d===bd && themed && best && best.key.startsWith("med"))){ bd=d; best=s; }
+  }
+  return best ? {key:best.key,t:best.t,f:best.f} : null;
+}
+
+/* =====================================================================
+   CONVERGE — questions éliminantes (mots ou chiffres)
+   ===================================================================== */
+const DIGIT_SHAPE = {1:[1,4,7], 2:[2,5,9], 3:[0,3,6,8]};
+const DIGIT_FEATS = [
+  {k:"pair", t:"Le chiffre est-il PAIR ?", f:d=>d%2===0},
+  {k:"g4",   t:"Est-il plus grand que 4 ?", f:d=>d>4},
+  {k:"g6",   t:"Est-il plus grand que 6 ?", f:d=>d>6},
+  {k:"p3",   t:"Est-il plus petit que 3 ?", f:d=>d<3},
+  {k:"rond", t:"Y voyez-vous un rond fermé ?", f:d=>[0,6,8,9].includes(d)}
+];
+let CV=null;
+
+function startConverge(cands,mode){
+  CV={cands:[...cands],mode,asked:new Set(),hist:[],q:null};
+  show("converge");
+  cvAsk();
+}
+function bestWordQ(){
+  // 1) suivre l'arbre enregistré s'il couvre la situation
+  while(CV.tnode && CV.tnode.L && !CV.asked.has(CV.tnode.L)){
+    const L=CV.tnode.L;
+    const yes=CV.cands.filter(c=>c.includes(L)).length;
+    if(yes===CV.cands.length){ CV.tnode=CV.tnode.yes; continue; } // tous OUI : descendre sans demander
+    if(yes===0){ CV.tnode=CV.tnode.no; continue; }
+    return {key:L, t:"Y a-t-il un «\u00A0"+L+"\u00A0» ?", f:c=>c.includes(L), tree:true};
+  }
+  // 2) algo live selon la stratégie
+  const L=pickLetter(CV.cands, CV.asked);
+  if(!L) return null;
+  return {key:L, t:"Y a-t-il un «\u00A0"+L+"\u00A0» ?", f:c=>c.includes(L)};
+}
+function bestDigitQ(){
+  let best=null,score=-1;
+  for(const ft of DIGIT_FEATS){
+    if(CV.asked.has(ft.k)) continue;
+    const w=CV.cands.filter(ft.f).length;
+    const s=Math.min(w,CV.cands.length-w);
+    if(s>score){score=s;best=ft;}
+  }
+  if(score<1) return null;
+  return {key:best.k, t:best.t, f:best.f};
+}
+function cvAsk(){
+  $("#converge").classList.remove("cv-final");
+  const maxNon=+(store.opts.maxNon||2);
+  $("#cvCount").textContent=CV.cands.length+" restants"
+    +(CV.mode==="anagram"?(" \u00B7 NON "+CV.noCount+"/"+maxNon):"");
+  $("#cvCands").textContent=CV.cands.slice(0,18).join("  ");
+  if(CV.cands.length<=1){ cvFinish(); return; }
+  CV.q = CV.mode==="digit" ? bestDigitQ() : CV.mode==="date" ? bestDateQ() : bestWordQ();
+  if(!CV.q){ cvFinish(); return; }   // plus de question utile
+  $("#cvQ").textContent=CV.q.t;
+  if(CV.mode==="date") $("#cvCands").textContent=CV.cands[0]+"  →  "+CV.cands[CV.cands.length-1];
+  if(CV.mode==="anagram"||CV.mode==="word") psSend(CV.q.key+" ("+CV.cands.length+")");
+}
+function cvAnswer(yes){
+  if(!CV||!CV.q) return;
+  CV.hist.push({cands:[...CV.cands],asked:new Set(CV.asked),noCount:CV.noCount||0,tnode:CV.tnode});
+  CV.asked.add(CV.q.key);
+  if(CV.q.tree&&CV.tnode) CV.tnode = yes ? CV.tnode.yes : CV.tnode.no;
+  CV.cands=CV.cands.filter(c=>CV.q.f(c)===yes);
+  buzz(yes?12:[12,40,12]);
+  if(CV.mode==="anagram"){
+    if(!yes) CV.noCount=(CV.noCount||0)+1;
+    const maxNon=+(store.opts.maxNon||2);
+    if(CV.cands.length===1){ anagResult(CV.cands[0],false); return; }
+    if(CV.cands.length===0){ cvFinish(); return; }
+    const eh=findExitHook(CV.cands,ANAG.list.exitHooks);
+    if(CV.noCount>=maxNon){
+      if(eh){ openExitHook(eh,CV.cands); return; }
+      cvFinish(); return; // candidats → peek
+    }
+    if(CV.cands.length<=3 && eh){ openExitHook(eh,CV.cands); return; }
+  }
+  cvAsk();
+}
+function cvUndoStep(){
+  if(!CV||!CV.hist.length) return;
+  const h=CV.hist.pop(); CV.cands=h.cands; CV.asked=h.asked;
+  if(h.noCount!==undefined) CV.noCount=h.noCount;
+  if(h.tnode!==undefined) CV.tnode=h.tnode;
+  buzz([10,40,10]); cvAsk();
+}
+function cvSkipQ(){
+  if(!CV||!CV.q) return;
+  CV.asked.add(CV.q.key); cvAsk();
+}
+function cvFinish(){
+  if(CV.mode==="digit"){
+    if(CV.cands.length===1){ commitDigit(CV.cands[0]); }
+    else { // ambigu : afficher les restants, undo pour reprendre
+      $("#converge").classList.add("cv-final");
+      $("#cvQ").textContent=CV.cands.join("  ");
+      $("#cvCands").textContent="ambigu — undo pour reprendre";
+    }
+    return;
+  }
+  // mots / anagrammes : bascule sur le peek avec le(s) résultat(s)
+  S.results=[...CV.cands].sort(); S.crib={}; S.results.forEach(w=>S.crib[w[0]]=true);
+  renderPeek(); show("peek");
+  $("#peek").classList.toggle("show", !!store.opts.guide);
+  if(S.results.length===1) psSend("= "+S.results[0]);
+  CV=null;
+}
+$("#zYes").onclick=()=>{ CV&&CV.mode==="hook" ? hookAnswer(true) : cvAnswer(true); };
+$("#zNo").onclick=()=>{ CV&&CV.mode==="hook" ? hookAnswer(false) : cvAnswer(false); };
+$("#cvUndo").onclick=e=>{e.stopPropagation(); if(CV&&CV.mode==="hook") return; cvUndoStep();};
+$("#cvSkip").onclick=e=>{e.stopPropagation(); CV&&CV.mode==="hook" ? hookSkip() : cvSkipQ();};
+
+/* =====================================================================
+   MODULE PIN — forme du chiffre puis questions
+   ===================================================================== */
+function startPin(){
+  S.effect="pin"; S.pin=[];
+  pinNextSlot();
+}
+function pinNextSlot(){
+  $("#shapeSeq").textContent="PIN — CHIFFRE "+(S.pin.length+1)+" / 4"
+    +(S.pin.length?("   ["+S.pin.join(" ")+" _]"):"");
+  show("shape");
+}
+function pinShape(n){
+  buzz(20);
+  startConverge([...DIGIT_SHAPE[n]],"digit");
+}
+function commitDigit(d){
+  S.pin.push(d); buzz([20,50,20]); CV=null;
+  if(S.pin.length<4){ pinNextSlot(); }
+  else {
+    const code=S.pin.join("");
+    S.results=[code]; S.crib={[code[0]]:true};
+    renderPeek(); show("peek");
+    $("#peek").classList.toggle("show", !!store.opts.guide);
+  }
+}
+
+function openFallback(){
+  const act=S.results.filter(w=>S.crib[w[0]]);
+  $("#fbTiles").innerHTML = act.slice(0,24).map(w=>`<b data-w="${w}">${w}</b>`).join("");
+  $$("#fbTiles b").forEach(t=>t.onclick=()=>{
+    $$("#fbTiles b").forEach(x=>x.classList.remove("sel"));
+    t.classList.add("sel"); $("#fbWord").value=t.dataset.w;
+  });
+  $("#fbHint").textContent = store.opts.outUrl ? "" : "Aucune URL d'out configurée — Réglages > OUT / FALLBACK.";
+  $("#fbLive").textContent = "mot + « "+(store.opts.trigger||"intéressant")+" » = capture";
+  show("fallback");
+}
+/* ---------- voix : capture "mot + trigger" façon Enigma ---------- */
+let rec=null, listening=false;
+function stopVoice(){ listening=false;
+  if(NATIVE) native("speechStop");
+  try{rec&&rec.stop()}catch(e){} rec=null;
+  $("#fbMic b").innerHTML="&#127908; Écouter"; }
+function feedTranscript(full){
+  $("#fbLive").textContent=full.trim().slice(-70)||"…";
+  const toks=full.trim().split(/\s+/).map(norm).filter(Boolean);
+  const trig=norm(store.opts.trigger||"interessant");
+  for(let i=1;i<toks.length;i++){
+    if(toks[i]===trig){ voiceCapture(toks[i-1]); return; }
+  }
+}
+function startVoice(){
+  if(NATIVE){
+    listening=true; $("#fbMic b").innerHTML="&#9632; Écoute en cours…"; $("#fbLive").textContent="…";
+    native("speechStart",{lang:"fr-FR"});
+    return;
+  }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ $("#fbHint").textContent="Reconnaissance vocale indisponible sur ce navigateur."; return; }
+  rec=new SR(); rec.lang="fr-FR"; rec.continuous=true; rec.interimResults=true;
+  listening=true; $("#fbMic b").innerHTML="&#9632; Écoute en cours…"; $("#fbLive").textContent="…";
+  rec.onresult=e=>{
+    let full=""; for(let i=0;i<e.results.length;i++) full+=e.results[i][0].transcript+" ";
+    feedTranscript(full);
+  };
+  rec.onerror=ev=>{ $("#fbHint").textContent="Micro : "+ev.error; stopVoice(); };
+  rec.onend=()=>{ if(listening){ try{rec.start()}catch(e){} } };
+  try{ rec.start(); }catch(e){ $("#fbHint").textContent="Impossible de démarrer le micro."; }
+}
+$("#fbMic").onclick=()=>{ listening ? stopVoice() : startVoice(); };
+function voiceCapture(w){
+  stopVoice();
+  // recale sur un mot du peek si correspondance
+  const hit=S.results.find(r=>r===w);
+  $("#fbWord").value = hit||w;
+  $("#fbLive").textContent="capté : "+(hit||w);
+  buzz([20,60,20]);
+  execAction();
+}
+
+/* ---------- mot "proche" : table d'associations puis API puis mot exact ---------- */
+function assocTable(){
+  const t={};
+  store.assoc.split(",").forEach(p=>{
+    const [k,v]=p.split("="); if(k&&v) t[norm(k)]=v.trim();
+  });
+  return t;
+}
+async function proche(w){
+  const t=assocTable(); const k=norm(w);
+  if(t[k]) return t[k];
+  const key=store.opts.apiKey;
+  if(key){
+    try{
+      const r=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":key,
+          "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-haiku-4-5",max_tokens:20,
+          messages:[{role:"user",content:'Donne un terme de recherche Google Images en français, fortement associé à "'+w+'" mais qui n\'est PAS ce mot (exemple : TELEVISION -> ecran plat). Réponds UNIQUEMENT le terme, en minuscules, sans ponctuation.'}]})
+      });
+      const d=await r.json();
+      const txt=(d.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("").trim().toLowerCase();
+      if(txt && norm(txt)!==k) return txt.split("\n")[0];
+    }catch(e){}
+  }
+  return w.toLowerCase();
+}
+
+/* ---------- exécution de l'action fallback ---------- */
+async function execAction(){
+  const w=$("#fbWord").value.trim(); if(!w) return;
+  const a=$("#fbAction").value;
+  if(a==="none") return;
+  if(a==="out"){
+    const url=(store.opts.outUrl||"").replace("{MOT}",encodeURIComponent(w.toLowerCase()));
+    if(!url){ $("#fbHint").textContent="Configure d'abord l'URL d'out dans les Réglages."; return; }
+    buzz(30); go(url); return;
+  }
+  let q = w.toLowerCase();
+  if(a==="gproche"){ $("#fbHint").textContent="…"; q=await proche(w); $("#fbHint").textContent="recherche : "+q; }
+  buzz(30);
+  go("https://www.google.com/search?tbm=isch&q="+encodeURIComponent(q));
+}
+$("#fbSend").onclick=execAction;
+$("#fbCopy").onclick=async()=>{
+  const w=$("#fbWord").value.trim(); if(!w) return;
+  try{ await navigator.clipboard.writeText(w.toLowerCase()); $("#fbHint").textContent="Copié : "+w; buzz(30); }
+  catch(e){ $("#fbHint").textContent="Copie impossible dans ce contexte."; }
+};
+$("#fbAdd").onclick=()=>{
+  const w=norm($("#fbWord").value); if(w.length<2||!S.category) return;
+  const l=store.lists; const arr=(l[S.category]||"").split(",").filter(Boolean);
+  if(!arr.includes(w)) arr.push(w);
+  l[S.category]=arr.join(","); store.lists=l;
+  $("#fbHint").textContent=w+" ajouté à «&nbsp;"+S.category+"&nbsp;»."; buzz(30); fillSel();
+};
+
+/* ---------- gestes ---------- */
+let t0=null;
+document.addEventListener("touchstart",e=>{
+  t0 = {x:e.touches[0].clientX,y:e.touches[0].clientY,n:e.touches.length,t:Date.now()};
+},{passive:true});
+document.addEventListener("touchend",e=>{
+  if(!t0) return;
+  const dx=e.changedTouches[0].clientX-t0.x, dy=e.changedTouches[0].clientY-t0.y;
+  const perf=["grid","binary","shape","passcode","peek","converge","commut","dobsum"].includes(S.screen);
+  // 2 doigts vers le bas = retour accueil
+  if(t0.n>=2 && dy>60){ show("home"); t0=null; return; }
+  if(!perf){ t0=null; return; }
+  // 1 doigt horizontal = effacer dernière saisie
+  if(t0.n===1 && Math.abs(dx)>70 && Math.abs(dy)<40){
+    if(S.screen==="binary") binDelete();
+    if(S.screen==="passcode"){ S.digits.pop(); updPcDots(); buzz([10,40,10]); }
+    if(S.screen==="converge") cvUndoStep();
+  }
+  // 1 doigt vers le bas = section précédente
+  if(t0.n===1 && dy>80 && Math.abs(dx)<50){
+    if(S.screen==="binary"||S.screen==="passcode"){ S.effect==="enigma" ? openGrid() : show("home"); }
+    else if(S.screen==="shape"){ S.effect==="pin" ? show("home") : show("binary"); }
+    else if(S.screen==="converge"){
+      if(CV&&CV.mode==="digit") pinNextSlot();
+      else if(S.effect==="anagram") openAnagGrid();
+      else if(S.effect==="dob") show("dobsum");
+      else show("peek");
+    }
+    else if(S.screen==="commut"){ CM=null; openAnagGrid(); }
+    else if(S.screen==="dobsum"){ openDobGrid(); }
+    else if(S.screen==="peek"){
+      if(S.effect==="pin"){ startPin(); }
+      else if(S.effect==="anagram"){ openAnagGrid(); }
+      else if(S.effect==="dob"){ openDobGrid(); }
+      else S.perfMode==="binary" ? show("binary") : (S.digits=[],updPcDots(),show("passcode"));
+    }
+  }
+  // 1 doigt vers le haut sur shape = passer le filtre forme (hors PIN)
+  if(t0.n===1 && dy<-80 && S.screen==="shape" && S.effect!=="pin"){ S.shape=0; computePeek(); }
+  t0=null;
+},{passive:true});
+
+/* =====================================================================
+   REMOTE — clavier HID & mode chiffres
+   ===================================================================== */
+function keyId(e){ return e.key.length===1 ? e.key : e.code; }
+
+document.addEventListener("keydown",e=>{
+  if(e.target.matches&&e.target.matches("input,textarea,select")) return;
+  const k=keyId(e);
+
+  /* apprentissage des touches */
+  if(S.learn){
+    const m=store.map; m[S.learn]=k; store.map=m;
+    $$(".keycap").forEach(c=>{ if(c.dataset.map===S.learn){c.textContent=k;c.classList.remove("wait");} });
+    S.learn=null; e.preventDefault(); return;
+  }
+
+  if(k==="Escape"){ show("home"); return; }
+
+  const map=store.map;
+  const digit = /^[0-9]$/.test(k) ? +k : null;
+
+  if(S.screen==="binary"){
+    if(k===map.A || digit===1) binInput("A");
+    else if(k===map.B || digit===2) binInput("B");
+    else if(k===map.C || digit===3) binConfirm();
+    else if(k===map.D || digit===0) binDelete();
+    e.preventDefault();
+  }
+  else if(S.screen==="shape"){
+    if(digit>=1&&digit<=3){
+      if(S.effect==="pin"){ pinShape(digit); }
+      else { S.shape=digit; buzz(40); computePeek(); }
+    }
+    else if((digit===0 || k===map.C) && S.effect!=="pin"){ S.shape=0; computePeek(); }
+    e.preventDefault();
+  }
+  else if(S.screen==="dobsum"){
+    if(digit>=1&&digit<=9) dobSum(digit);
+    e.preventDefault();
+  }
+  else if(S.screen==="converge"){
+    const hookM=CV&&CV.mode==="hook";
+    if(k===map.A || digit===1) hookM?hookAnswer(true):cvAnswer(true);
+    else if(k===map.B || digit===2) hookM?hookAnswer(false):cvAnswer(false);
+    else if(k===map.D || digit===0){ if(!hookM) cvUndoStep(); }
+    else if(k===map.C || digit===3) hookM?hookSkip():cvSkipQ();
+    e.preventDefault();
+  }
+  else if(S.screen==="passcode"){
+    if(digit!==null) pcInput(digit);
+    else if(k===map.D){ S.digits.pop(); updPcDots(); }
+    e.preventDefault();
+  }
+  else if(S.screen==="peek"){
+    if(k===map.C || k==="Enter") $("#peek").classList.toggle("show");
+  }
+});
+
+/* =====================================================================
+   RÉGLAGES & LISTES
+   ===================================================================== */
+$$(".keycap").forEach(c=>{
+  c.textContent = store.map[c.dataset.map]||"?";
+  c.onclick=()=>{ $$(".keycap").forEach(x=>x.classList.remove("wait"));
+    S.learn=c.dataset.map; c.classList.add("wait"); c.textContent="…"; };
+});
+$$(".tog").forEach(t=>{
+  const o=store.opts; t.classList.toggle("on",!!o[t.dataset.opt]);
+  t.onclick=()=>{ const o=store.opts; o[t.dataset.opt]=!o[t.dataset.opt]; store.opts=o;
+    t.classList.toggle("on",o[t.dataset.opt]); };
+});
+
+const sel=$("#listSel"), txt=$("#listTxt");
+const outIn=$("#outUrl");
+outIn.value = store.opts.outUrl||"";
+outIn.addEventListener("change",()=>{ const o=store.opts; o.outUrl=outIn.value.trim(); store.opts=o; });
+const trigIn=$("#trigIn");
+trigIn.value = store.opts.trigger||"intéressant";
+trigIn.addEventListener("change",()=>{ const o=store.opts; o.trigger=trigIn.value.trim()||"intéressant"; store.opts=o; });
+const apiIn=$("#apiIn");
+apiIn.value = store.opts.apiKey||"";
+apiIn.addEventListener("change",()=>{ const o=store.opts; o.apiKey=apiIn.value.trim(); store.opts=o; });
+const stratSel=$("#stratSel");
+stratSel.value = store.opts.strat||"transgressive";
+stratSel.addEventListener("change",()=>{ const o=store.opts; o.strat=stratSel.value; store.opts=o; });
+const maxNonSel=$("#maxNonSel");
+maxNonSel.value = String(store.opts.maxNon||2);
+maxNonSel.addEventListener("change",()=>{ const o=store.opts; o.maxNon=+maxNonSel.value; store.opts=o; });
+
+const ASSOC_KEY="— Associations (Google proche)";
+function fillSel(){
+  const ag=store.anag;
+  sel.innerHTML = CAT_ORDER.map(k=>`<option>${k}</option>`).join("")
+    + Object.keys(ag).map(k=>`<option value="__anag:${k}">PA — ${ag[k].name}</option>`).join("")
+    + `<option value="__assoc">${ASSOC_KEY}</option>`;
+  loadTxt();
+}
+function loadTxt(){
+  $("#treeBtn").style.display = sel.value.startsWith("__anag:") ? "block" : "none";
+  if(sel.value==="__assoc"){ txt.value=store.assoc.split(",").join(", "); return; }
+  if(sel.value.startsWith("__anag:")){
+    const k=sel.value.slice(7);
+    txt.value=((store.anag[k]||{}).words||[]).join(", ");
+    return;
+  }
+  txt.value=(store.lists[sel.value]||"").split(",").join(", ");
+}
+sel.onchange=loadTxt;
+$("#treeBtn").onclick=()=>{ if(sel.value.startsWith("__anag:")) openTreeb(sel.value.slice(7)); };
+$("#listSave").onclick=()=>{
+  if(sel.value==="__assoc"){
+    store.assoc = txt.value.split(",").map(s=>s.trim()).filter(s=>s.includes("=")).join(",");
+  } else if(sel.value.startsWith("__anag:")){
+    const k=sel.value.slice(7);
+    const ag=store.anag;
+    ag[k].words = txt.value.split(",").map(norm).filter(w=>w.length>1);
+    store.anag=ag; mmMemo.clear();
+  } else {
+    const l=store.lists;
+    l[sel.value] = txt.value.split(",").map(norm).filter(w=>w.length>1).join(",");
+    store.lists=l;
+  }
+  loadTxt(); buzz(30);
+};
+fillSel();
+
+/* empêcher le scroll/zoom parasite en perf */
+document.addEventListener("touchmove",e=>{
+  if(["grid","binary","shape","passcode"].includes(S.screen)) e.preventDefault();
+},{passive:false});
+</script>
+</body>
+</html>
