@@ -239,6 +239,7 @@
   <button class="btn go" data-go="pin"><b>Code PIN</b><small>4 chiffres &middot; formes puis questions</small></button>
   <button class="btn go" data-go="anagram"><b>Anagrammes</b><small>PA transgressif &middot; hooks &middot; exit hooks</small></button>
   <button class="btn go" data-go="dob"><b>Date de naissance</b><small>Signe puis dichotomie sur le jour</small></button>
+  <button class="btn go" data-go="trident"><b>Trident</b><small>Master word &middot; d&eacute;duction &middot; pr&eacute;diction</small></button>
   <button class="btn" data-go="settings"><b>Réglages</b><small>Touches remote &middot; options &middot; out</small></button>
   <button class="btn" data-go="lists"><b>Listes</b><small>Catégories, prénoms &amp; associations</small></button>
   <div class="foot">glisser 2 doigts vers le bas = retour &middot; V1</div>
@@ -583,15 +584,16 @@ const buzz = ms => {
 const go = url => { if(NATIVE){ native("openURL",{url}); } else { window.location.href=url; } };
 const words = cat => (store.lists[cat]||"").split(",").map(norm).filter(w=>w.length>1);
 
+// écrans "en performance" — liste UNIQUE (utilisée par show() et les gestes)
+const PERF_IDS=["binary","shape","grid","passcode","peek","converge","commut","dobsum"];
 function show(id){
   if(S.screen==="fallback" && id!=="fallback" && typeof stopVoice==="function") stopVoice();
   $$(".screen").forEach(s=>s.classList.remove("on"));
   $("#"+id).classList.add("on");
   S.screen=id;
-  const perfIds=["binary","shape","grid","passcode","peek","converge","commut","dobsum"];
-  document.body.classList.toggle("guide", store.opts.guide && perfIds.includes(id));
+  document.body.classList.toggle("guide", store.opts.guide && PERF_IDS.includes(id));
   // bouton maison : partout sauf accueil ; sur les écrans perf uniquement en mode guide
-  $("#homeBtn").classList.toggle("on", id!=="home" && (!perfIds.includes(id) || store.opts.guide));
+  $("#homeBtn").classList.toggle("on", id!=="home" && (!PERF_IDS.includes(id) || store.opts.guide));
 }
 $("#homeBtn").onclick=()=>{ buzz(15); show("home"); };
 
@@ -694,6 +696,11 @@ $$("[data-go]").forEach(el=>el.addEventListener("click",()=>{
   else if(t==="pin"){ startPin(); }
   else if(t==="anagram"){ openAnagGrid(); }
   else if(t==="dob"){ openDobGrid(); }
+  else if(t==="trident"){
+    // Trident vit en NATIF (faux Notes SwiftUI) — en web, repli vers la webapp
+    if(NATIVE) native("openTrident");
+    else window.location.href="https://hologramblues.github.io/TRIDENT-APP/";
+  }
   else show(t);
 }));
 
@@ -1804,7 +1811,7 @@ document.addEventListener("touchstart",e=>{
 document.addEventListener("touchend",e=>{
   if(!t0) return;
   const dx=e.changedTouches[0].clientX-t0.x, dy=e.changedTouches[0].clientY-t0.y;
-  const perf=["grid","binary","shape","passcode","peek","converge","commut","dobsum"].includes(S.screen);
+  const perf=PERF_IDS.includes(S.screen);
   // 2 doigts vers le bas = retour accueil
   if(t0.n>=2 && dy>60){ show("home"); t0=null; return; }
   if(!perf){ t0=null; return; }
