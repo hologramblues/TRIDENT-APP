@@ -24,6 +24,8 @@ struct NotesView: View {
         let f = DateFormatter()
         f.locale = Locale(identifier: "fr_FR")
         f.dateFormat = "d MMMM yyyy 'à' HH:mm"
+        // prédiction affichée : date antidatée, AVEC ":" normal (le spectateur peut la lire)
+        if let d = app.predictionDate { return f.string(from: d) }
         var s = f.string(from: Date())
         // signal discret : résultat prêt → le ":" de l'heure devient "."
         if app.notesReady { s = s.replacingOccurrences(of: ":", with: ".") }

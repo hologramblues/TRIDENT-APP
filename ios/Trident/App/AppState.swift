@@ -16,6 +16,7 @@ final class AppState: ObservableObject {
     @Published var notesReady = false
     @Published var notesRevealed = false // candidat affiché en bas de la fausse note
     @Published var notesError = ""
+    @Published var predictionDate: Date? // date antidatée affichée après une prédiction
     @Published var errorMessage = ""
     @Published var inputText = ""
     @Published var noteText = ""
@@ -126,13 +127,33 @@ final class AppState: ObservableObject {
     }
 
     /// Appui long sur le candidat révélé : validation ✓ au journal + la note entière
-    /// devient ce mot — l'app affiche alors une "prédiction" écrite à l'avance.
+    /// devient ce mot — l'app affiche alors une "prédiction" écrite à l'avance,
+    /// avec une date antidatée crédible (la note "existait" avant le tour).
     func notesPredict() {
         guard let result, idx < result.candidats.count else { return }
         validateCurrent()
         let mot = result.candidats[idx].mot
         noteText = mot.prefix(1).uppercased() + mot.dropFirst()
+        predictionDate = Self.antedatedDate()
         notesRevealed = false
+    }
+
+    /// Date crédible d'une prédiction "écrite à l'avance" : le matin même (9 h 0x-5x)
+    /// si le tour se joue l'après-midi ou le soir, sinon la veille au soir (21 h 0x-5x).
+    static func antedatedDate(now: Date = Date()) -> Date {
+        let cal = Calendar.current
+        if cal.component(.hour, from: now) >= 14 {
+            var c = cal.dateComponents([.year, .month, .day], from: now)
+            c.hour = 9
+            c.minute = Int.random(in: 4...57)
+            return cal.date(from: c) ?? now
+        } else {
+            let veille = cal.date(byAdding: .day, value: -1, to: now) ?? now
+            var c = cal.dateComponents([.year, .month, .day], from: veille)
+            c.hour = 21
+            c.minute = Int.random(in: 4...57)
+            return cal.date(from: c) ?? now
+        }
     }
 
     /// Tap sur la ligne de date : remise à zéro complète pour le spectateur suivant
@@ -145,6 +166,7 @@ final class AppState: ObservableObject {
         notesReady = false
         notesRevealed = false
         notesError = ""
+        predictionDate = nil
     }
 
     // ————— Réglages —————
