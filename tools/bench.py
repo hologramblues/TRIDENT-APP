@@ -27,6 +27,8 @@ from pathlib import Path
 
 RACINE = Path(__file__).resolve().parents[1]
 MODELE = "claude-sonnet-5"
+MAX_TOKENS = 2000  # même valeur que l'app ; modifiable par --max-tokens pour diagnostic
+DUMP_DIR = None    # --dump : enregistre les réponses brutes pour inspection
 
 # Batterie de référence (voir CLAUDE.md) : "trio": "mot attendu au rang 1"
 BATTERIE = [
@@ -64,7 +66,7 @@ def extract_json(raw):
 
 
 def call_api(cle, messages, temperature=True):
-    body = {"model": MODELE, "max_tokens": 2000, "messages": messages}
+    body = {"model": MODELE, "max_tokens": MAX_TOKENS, "messages": messages}
     if temperature:
         body["temperature"] = 0
     req = urllib.request.Request(
@@ -89,9 +91,17 @@ def call_api(cle, messages, temperature=True):
     return "\n".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text")
 
 
-def deduire(cle, prompt, trio):
+def dump(trio, essai, etiquette, texte):
+    if DUMP_DIR is None:
+        return
+    slug = re.sub(r"[^a-z0-9]+", "-", trio.lower()).strip("-")
+    (DUMP_DIR / f"{slug}_run{essai}_{etiquette}.txt").write_text(texte, encoding="utf-8")
+
+
+def deduire(cle, prompt, trio, essai=0):
     user = {"role": "user", "content": f"{prompt}\n\nENTRÉE (ordre aléatoire) : {trio}"}
     texte = call_api(cle, [user])
+    dump(trio, essai, "1er-appel", texte)
     parsed = extract_json(texte)
     if parsed is None:
         texte = call_api(cle, [
@@ -99,6 +109,7 @@ def deduire(cle, prompt, trio):
             {"role": "assistant", "content": texte},
             {"role": "user", "content": "Conclus MAINTENANT : donne UNIQUEMENT le bloc JSON final, sans aucun autre texte."},
         ])
+        dump(trio, essai, "rattrapage", texte)
         parsed = extract_json(texte)
     if not parsed or not parsed.get("candidats"):
         return None
@@ -111,7 +122,15 @@ def main():
     ap.add_argument("-t", action="append", default=[], metavar="TRIO:ATTENDU",
                     help='trio ad hoc, ex. -t "verre image mammouth:miroir" (remplace la batterie)')
     ap.add_argument("-j", type=int, default=4, help="appels API en parallèle (défaut 4)")
+    ap.add_argument("--dump", metavar="DIR", help="enregistre les réponses brutes dans DIR (diagnostic)")
+    ap.add_argument("--max-tokens", type=int, default=2000, help="max_tokens de l'appel (défaut 2000, comme l'app)")
     args = ap.parse_args()
+
+    global MAX_TOKENS, DUMP_DIR
+    MAX_TOKENS = args.max_tokens
+    if args.dump:
+        DUMP_DIR = Path(args.dump)
+        DUMP_DIR.mkdir(parents=True, exist_ok=True)
 
     cle = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("TRIDENT_API_KEY")
     if not cle:
@@ -126,9 +145,9 @@ def main():
     print(f"Banc de test — {len(batterie)} trios × {args.n} exécutions ({MODELE}, temperature 0)\n")
 
     def run(travail):
-        trio, attendu, _ = travail
+        trio, attendu, essai = travail
         try:
-            mots = deduire(cle, prompt, trio)
+            mots = deduire(cle, prompt, trio, essai)
         except Exception as e:
             return trio, attendu, None, f"erreur: {e}"
         if not mots:
