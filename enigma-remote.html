@@ -104,6 +104,10 @@
   .guide .pc-digits{display:block}
   /* révélation année DOB : lisible en performance (convention gris discret du hub) */
   .pc-digits.reveal{display:block;color:#3a372e;letter-spacing:.18em}
+  /* Cryptogramme : la consigne contient de la méthode → guide uniquement.
+     Seules les issues (#cscOuts, .cv-cands) restent en gris discret en perf. */
+  #csc .cv-q{color:transparent}
+  .guide #csc .cv-q{color:var(--amber)}
 
   /* passcode */
   .pc-head{margin-top:16vh;text-align:center}
@@ -239,6 +243,7 @@
   <button class="btn go" data-go="binary"><b>Enigma</b><small>Séquence A/B remote/tap + forme &middot; catégories</small></button>
   <button class="btn go" data-go="prenoms"><b>Prénoms</b><small>Divination propless &middot; binaire puis questions</small></button>
   <button class="btn go" data-go="pin"><b>Code PIN</b><small>4 chiffres &middot; formes puis questions</small></button>
+  <button class="btn go" data-go="csc"><b>Cryptogramme</b><small>3 chiffres carte &middot; divination propless</small></button>
   <button class="btn go" data-go="anagram"><b>Anagrammes</b><small>PA transgressif &middot; hooks &middot; exit hooks</small></button>
   <button class="btn go" data-go="dob"><b>Date de naissance</b><small>Signe puis dichotomie sur le jour</small></button>
   <button class="btn go" data-go="trident"><b>Trident</b><small>Master word &middot; d&eacute;duction &middot; pr&eacute;diction</small></button>
@@ -332,6 +337,14 @@
     <b data-n="7">7<small>PQRS</small></b><b data-n="8">8<small>TUV</small></b><b data-n="9">9<small>WXYZ</small></b>
     <b class="ghost"></b><b data-n="0">0</b><b id="padDel">&#9003;</b>
   </div>
+</div>
+
+<!-- ======================= CRYPTOGRAMME (3 chiffres) ======================= -->
+<div class="screen perf" id="csc">
+  <div class="cv-q" id="cscCue"></div>
+  <div class="cv-cands" id="cscOuts"></div>
+  <div class="zone" id="cscYes" style="bottom:10px;left:10px;width:calc(50% - 15px);height:36%">OUI</div>
+  <div class="zone" id="cscNo" style="bottom:10px;right:10px;width:calc(50% - 15px);height:36%">NON</div>
 </div>
 
 <!-- ======================= ARBRE (builder JTA) ======================= -->
@@ -588,7 +601,7 @@ const go = url => { if(NATIVE){ native("openURL",{url}); } else { window.locatio
 const words = cat => (store.lists[cat]||"").split(",").map(norm).filter(w=>w.length>1);
 
 // écrans "en performance" — liste UNIQUE (utilisée par show() et les gestes)
-const PERF_IDS=["binary","shape","grid","passcode","peek","converge","commut","dobsum"];
+const PERF_IDS=["binary","shape","grid","passcode","peek","converge","commut","dobsum","csc"];
 function show(id){
   if(S.screen==="fallback" && id!=="fallback" && typeof stopVoice==="function") stopVoice();
   $$(".screen").forEach(s=>s.classList.remove("on"));
@@ -697,6 +710,7 @@ $$("[data-go]").forEach(el=>el.addEventListener("click",()=>{
     S.seq=[]; S.shape=0; updBin(); show("binary");
   }
   else if(t==="pin"){ startPin(); }
+  else if(t==="csc"){ openCsc(); }
   else if(t==="anagram"){ openAnagGrid(); }
   else if(t==="dob"){ openDobGrid(); }
   else if(t==="trident"){
@@ -1856,6 +1870,7 @@ document.addEventListener("touchend",e=>{
     if(S.screen==="binary") binDelete();
     if(S.screen==="passcode"){ S.digits.pop(); updPcDots(); buzz([10,40,10]); }
     if(S.screen==="converge") cvUndoStep();
+    if(S.screen==="csc") cscUndo();
   }
   // 1 doigt vers le bas = section précédente
   if(t0.n===1 && dy>80 && Math.abs(dx)<50){
@@ -1870,6 +1885,7 @@ document.addEventListener("touchend",e=>{
     }
     else if(S.screen==="commut"){ CM=null; openAnagGrid(); }
     else if(S.screen==="dobsum"){ openDobGrid(); }
+    else if(S.screen==="csc"){ show("home"); }
     else if(S.screen==="peek"){
       if(S.effect==="pin"){ startPin(); }
       else if(S.effect==="anagram"){ openAnagGrid(); }
@@ -1881,6 +1897,61 @@ document.addEventListener("touchend",e=>{
   if(t0.n===1 && dy<-80 && S.screen==="shape" && S.effect!=="pin"){ S.shape=0; computePeek(); }
   t0=null;
 },{passive:true});
+
+/* =====================================================================
+   CRYPTOGRAMME — divination d'un code 3 chiffres (méthode F. Parker, 3CSC)
+   Contraintes énoncées à la construction (1-9, du plus petit au plus grand,
+   alternance pair/impair, chiffres bien étalés) → 5 issues possibles.
+   Révélation dans l'ordre "dos de carte" (plus haut, plus bas, restant) :
+   une touche sur le 9, une éventuelle sur le 1, puis issue unique ou
+   sortie écrite recto/verso sur la paire restante.
+   ===================================================================== */
+let CSC=null;
+function openCsc(){
+  S.effect="csc"; CSC={step:1, from:1, outs:null};
+  cscRender();
+  show("csc");
+}
+function cscRender(){
+  const fini = CSC.step===3;
+  $("#cscYes").style.display = fini ? "none" : "";
+  $("#cscNo").style.display = fini ? "none" : "";
+  if(CSC.step===1){
+    $("#cscCue").textContent="Construction : 1→9 · petit vers grand · pair/impair alternés · bien étalés. Focus ordre dos de carte — LE PLUS HAUT : touche sur le 9 ?";
+    $("#cscOuts").textContent="";
+  }else if(CSC.step===2){
+    $("#cscCue").textContent="LE PLUS BAS — « pas juste le 1, comme tout le monde ? »";
+    $("#cscOuts").textContent="916 · 914 · 936";
+  }else if(CSC.outs.length===1){
+    $("#cscCue").textContent="ISSUE UNIQUE — annonce directe";
+    $("#cscOuts").textContent="= "+CSC.outs[0];
+    psSend("= "+CSC.outs[0]);
+  }else{
+    $("#cscCue").textContent="SORTIE ÉCRITE — écris le 1er face à toi, rature à blanc, bascule, écris le 2e au dos. Restitution : plus haut, plus bas, restant.";
+    $("#cscOuts").textContent="RECTO "+CSC.outs[0]+" — VERSO "+CSC.outs[1];
+  }
+}
+function cscAnswer(oui){
+  if(!CSC || CSC.step===3) return;
+  buzz(20);
+  if(CSC.step===1){
+    if(oui){ CSC.step=2; }
+    else { CSC.from=1; CSC.step=3; CSC.outs=["825","714"]; }
+  }else{
+    CSC.from=2; CSC.step=3;
+    CSC.outs = oui ? ["916","914"] : ["936"];
+  }
+  cscRender();
+}
+function cscUndo(){
+  if(!CSC) return;
+  buzz([10,40,10]);
+  if(CSC.step===3){ CSC.step=CSC.from; CSC.outs=null; }
+  else if(CSC.step===2){ CSC.step=1; }
+  cscRender();
+}
+$("#cscYes").onclick=()=>cscAnswer(true);
+$("#cscNo").onclick=()=>cscAnswer(false);
 
 /* =====================================================================
    REMOTE — clavier HID & mode chiffres
@@ -1920,6 +1991,12 @@ document.addEventListener("keydown",e=>{
   }
   else if(S.screen==="dobsum"){
     if(digit>=1&&digit<=9) dobSum(digit);
+    e.preventDefault();
+  }
+  else if(S.screen==="csc"){
+    if(k===map.A || digit===1) cscAnswer(true);
+    else if(k===map.B || digit===2) cscAnswer(false);
+    else if(k===map.D || digit===0) cscUndo();
     e.preventDefault();
   }
   else if(S.screen==="converge"){
