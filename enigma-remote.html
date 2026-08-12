@@ -1916,18 +1916,33 @@ function cscRender(){
   const fini = CSC.step===3;
   $("#cscYes").style.display = fini ? "none" : "";
   $("#cscNo").style.display = fini ? "none" : "";
+  // Script de scène (formulations originales FR — le manuscrit source reste hors du repo)
   if(CSC.step===1){
-    $("#cscCue").textContent="Construction : 1→9 · petit vers grand · pair/impair alternés · bien étalés. Focus ordre dos de carte — LE PLUS HAUT : touche sur le 9 ?";
+    $("#cscCue").innerHTML=
+      "CONSTRUCTION — « Tu vas fabriquer un code secret à 3 chiffres, comme le cryptogramme au dos d'une carte. "
+      +"Prends tes chiffres entre 1 et 9, pas de zéro. Et pour que je n'aie aucune chance : pars du plus petit vers le plus grand, "
+      +"alterne un impair puis un pair, et écarte-les au maximum — un code bien éclaté. »<br><br>"
+      +"RÉVÉLATION — « Pense-les maintenant dans l'ordre où ils seraient au dos de la carte… concentre-toi sur le PLUS HAUT… » "
+      +"puis, comme une perception : « …là, c'est fort… un 9 par exemple… » — GUETTE LA RÉACTION → OUI / NON";
     $("#cscOuts").textContent="";
   }else if(CSC.step===2){
-    $("#cscCue").textContent="LE PLUS BAS — « pas juste le 1, comme tout le monde ? »";
+    $("#cscCue").innerHTML=
+      "« Le PLUS BAS maintenant… » puis, complice : « …tu n'as pas fait comme tout le monde en partant du 1, si ? »<br>"
+      +"OUI (il a le 1) → paire 916/914 · NON → issue unique 936.<br>"
+      +"Si raté sur le 9 tout à l'heure : « Bien — tu ne suis pas les schémas prévisibles, c'est ce qu'il me faut. »";
     $("#cscOuts").textContent="916 · 914 · 936";
   }else if(CSC.outs.length===1){
-    $("#cscCue").textContent="ISSUE UNIQUE — annonce directe";
+    $("#cscCue").innerHTML=
+      "ISSUE UNIQUE — annonce directe, en assurance : « Fixe ton code entier… je le vois se dessiner… »<br>"
+      +"Restitution : « redis-les-moi dans l'ordre où tu les as pensés — le plus haut… le plus bas… et celui qui reste. »";
     $("#cscOuts").textContent="= "+CSC.outs[0];
     psSend("= "+CSC.outs[0]);
   }else{
-    $("#cscCue").textContent="SORTIE ÉCRITE — écris le 1er face à toi, rature à blanc, bascule, écris le 2e au dos. Restitution : plus haut, plus bas, restant.";
+    $("#cscCue").innerHTML=
+      "SORTIE ÉCRITE — écris le 1er nombre face à toi, fais mine de le raturer (ongle sur la carte, le stylo ne touche pas), "
+      +"bascule le billet contre le dos de ta main, écris le 2e sur l'autre face. Souffle sur l'encre : c'est « figé ».<br>"
+      +"Restitution : « redis-les-moi dans l'ordre où tu les as pensés — le plus haut… le plus bas… et celui qui reste. » "
+      +"Montre la face qui correspond ; l'autre passe pour le brouillon raturé.";
     $("#cscOuts").textContent="RECTO "+CSC.outs[0]+" — VERSO "+CSC.outs[1];
   }
 }
