@@ -41,7 +41,8 @@ Après toute modification du prompt ou du parsing, vérifier ces trios de réfé
 - `verre image mammouth` → MIROIR (cat=verre par matière, préfixe M-I)
 - `océan spatule citadelle` → COUTEAU (cat=spatule, préfixe C-O)
 - `philosophe "sac à main" oiseau` → PORTEFEUILLE (cat=sac à main, préfixe P-O)
-- `flamant baguettes orange` → FOURCHETTE (cat=baguettes au sens ustensiles pour manger, préfixe F-O) — doit aussi marcher avec les variantes de dictée `flamand baguette orange`
+- `flamant baguettes orange` → FOURCHETTE (cat=baguettes au sens ustensiles pour manger, préfixe F-O)
+- `flamand baguette orange` → FOURCHETTE — **limite connue (0/3 au banc du 2026-08-12)** : double correction simultanée (homophone + sens minoritaire), ne pas tenter de la corriger en chargeant le prompt (le tour 3 annulé de l'affinage n°12 a prouvé que ça régresse le reste) ; piste = prétraitement code ou few-shot serveur
 
 Et vérifier la stabilité : deux exécutions du même trio doivent donner la même liste.
 
