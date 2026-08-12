@@ -2,6 +2,7 @@
 
 ## Règles de travail
 
+- **Méthode de travail : Gauntlet Loop — lire et appliquer `GAUNTLET.md`** (master prompt du projet) pour toute tâche non triviale : barre de qualité concrète définie avant de construire, critique à contexte frais qui inspecte les artefacts réels (captures, banc de test, builds), boucle jusqu'à franchissement de la barre, le constructeur ne se note jamais lui-même.
 - **Après chaque modification validée : commit avec un message clair (en français) et push sur `main`.** Le site est servi par GitHub Pages depuis `main` / racine — chaque push déploie en production (~1 min).
 - Travailler en français (code commenté en français, messages de commit en français).
 - Lire `PROJET.md` en début de session pour le contexte complet de l'application et l'historique des décisions.
