@@ -27,7 +27,7 @@ from pathlib import Path
 
 RACINE = Path(__file__).resolve().parents[1]
 MODELE = "claude-sonnet-5"
-MAX_TOKENS = 2000  # même valeur que l'app ; modifiable par --max-tokens pour diagnostic
+MAX_TOKENS = 8000  # même valeur que l'app ; modifiable par --max-tokens pour diagnostic
 DUMP_DIR = None    # --dump : enregistre les réponses brutes pour inspection
 
 # Batterie de référence (voir CLAUDE.md) : "trio": "mot attendu au rang 1"
@@ -123,7 +123,7 @@ def main():
                     help='trio ad hoc, ex. -t "verre image mammouth:miroir" (remplace la batterie)')
     ap.add_argument("-j", type=int, default=4, help="appels API en parallèle (défaut 4)")
     ap.add_argument("--dump", metavar="DIR", help="enregistre les réponses brutes dans DIR (diagnostic)")
-    ap.add_argument("--max-tokens", type=int, default=2000, help="max_tokens de l'appel (défaut 2000, comme l'app)")
+    ap.add_argument("--max-tokens", type=int, default=8000, help="max_tokens de l'appel (défaut 8000, comme l'app)")
     args = ap.parse_args()
 
     global MAX_TOKENS, DUMP_DIR

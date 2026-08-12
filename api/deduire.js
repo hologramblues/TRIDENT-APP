@@ -15,7 +15,7 @@ const { DEDUCTION_PROMPT } = require("./_prompt.js");
 const MODELE = "claude-sonnet-5";
 
 async function doCall(messages, avecTemperature) {
-  const body = { model: MODELE, max_tokens: 2000, messages };
+  const body = { model: MODELE, max_tokens: 8000, messages }; // couvre aussi le raisonnement interne
   if (avecTemperature) body.temperature = 0; // sortie stable et reproductible
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
