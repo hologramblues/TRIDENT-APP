@@ -108,6 +108,8 @@
      Seules les issues (#cscOuts, .cv-cands) restent en gris discret en perf. */
   #csc .cv-q{color:transparent}
   .guide #csc .cv-q{color:var(--amber)}
+  #card .cv-q{color:transparent}
+  .guide #card .cv-q{color:var(--amber)}
 
   /* passcode */
   .pc-head{margin-top:16vh;text-align:center}
@@ -244,6 +246,7 @@
   <button class="btn go" data-go="prenoms"><b>Prénoms</b><small>Divination propless &middot; binaire puis questions</small></button>
   <button class="btn go" data-go="pin"><b>Code PIN</b><small>4 chiffres &middot; formes puis questions</small></button>
   <button class="btn go" data-go="csc"><b>Cryptogramme</b><small>3 chiffres carte &middot; divination propless</small></button>
+  <button class="btn go" data-go="card"><b>Carte pens&eacute;e</b><small>R&eacute;duction de choix &middot; force ou divination</small></button>
   <button class="btn go" data-go="anagram"><b>Anagrammes</b><small>PA transgressif &middot; hooks &middot; exit hooks</small></button>
   <button class="btn go" data-go="dob"><b>Date de naissance</b><small>Signe puis dichotomie sur le jour</small></button>
   <button class="btn go" data-go="trident"><b>Trident</b><small>Master word &middot; d&eacute;duction &middot; pr&eacute;diction</small></button>
@@ -345,6 +348,14 @@
   <div class="cv-cands" id="cscOuts"></div>
   <div class="zone" id="cscYes" style="bottom:10px;left:10px;width:calc(50% - 15px);height:36%">OUI</div>
   <div class="zone" id="cscNo" style="bottom:10px;right:10px;width:calc(50% - 15px);height:36%">NON</div>
+</div>
+
+<!-- ======================= CARTE PENSÉE ======================= -->
+<div class="screen perf" id="card">
+  <div class="cv-q" id="cardCue"></div>
+  <div class="cv-cands" id="cardOuts"></div>
+  <div class="zone" id="cardYes" style="bottom:10px;left:10px;width:calc(50% - 15px);height:36%">OUI</div>
+  <div class="zone" id="cardNo" style="bottom:10px;right:10px;width:calc(50% - 15px);height:36%">NON</div>
 </div>
 
 <!-- ======================= ARBRE (builder JTA) ======================= -->
@@ -601,7 +612,7 @@ const go = url => { if(NATIVE){ native("openURL",{url}); } else { window.locatio
 const words = cat => (store.lists[cat]||"").split(",").map(norm).filter(w=>w.length>1);
 
 // écrans "en performance" — liste UNIQUE (utilisée par show() et les gestes)
-const PERF_IDS=["binary","shape","grid","passcode","peek","converge","commut","dobsum","csc"];
+const PERF_IDS=["binary","shape","grid","passcode","peek","converge","commut","dobsum","csc","card"];
 function show(id){
   if(S.screen==="fallback" && id!=="fallback" && typeof stopVoice==="function") stopVoice();
   $$(".screen").forEach(s=>s.classList.remove("on"));
@@ -711,6 +722,7 @@ $$("[data-go]").forEach(el=>el.addEventListener("click",()=>{
   }
   else if(t==="pin"){ startPin(); }
   else if(t==="csc"){ openCsc(); }
+  else if(t==="card"){ openCardGrid(); }
   else if(t==="anagram"){ openAnagGrid(); }
   else if(t==="dob"){ openDobGrid(); }
   else if(t==="trident"){
@@ -1871,6 +1883,7 @@ document.addEventListener("touchend",e=>{
     if(S.screen==="passcode"){ S.digits.pop(); updPcDots(); buzz([10,40,10]); }
     if(S.screen==="converge") cvUndoStep();
     if(S.screen==="csc") cscUndo();
+    if(S.screen==="card") cardUndo();
   }
   // 1 doigt vers le bas = section précédente
   if(t0.n===1 && dy>80 && Math.abs(dx)<50){
@@ -1886,6 +1899,7 @@ document.addEventListener("touchend",e=>{
     else if(S.screen==="commut"){ CM=null; openAnagGrid(); }
     else if(S.screen==="dobsum"){ openDobGrid(); }
     else if(S.screen==="csc"){ show("home"); }
+    else if(S.screen==="card"){ openCardGrid(); }
     else if(S.screen==="peek"){
       if(S.effect==="pin"){ startPin(); }
       else if(S.effect==="anagram"){ openAnagGrid(); }
@@ -1969,6 +1983,152 @@ $("#cscYes").onclick=()=>cscAnswer(true);
 $("#cscNo").onclick=()=>cscAnswer(false);
 
 /* =====================================================================
+   CARTE PENSÉE — réduction de choix (force ou divination)
+   Le cadrage parlé retire figures et as, pousse vers une valeur médiane
+   impaire et vers le rouge : l'espace réel tombe à une poignée de cartes,
+   hiérarchisées par les tendances connues du "pense à une carte".
+   Deux modes : FORCE (cible + sortie écrite recto/verso) et DIVINATION
+   (perceptions successives qui filtrent le pool, candidats classés).
+   ===================================================================== */
+// poids = tendance statistique après le cadrage (7 rouge dominant)
+const CARD_POOL=[
+  {c:"7 COEUR",    r:"rouge", s:"maj", v:7, w:100},
+  {c:"5 COEUR",    r:"rouge", s:"maj", v:5, w:62},
+  {c:"7 CARREAU",  r:"rouge", s:"min", v:7, w:55},
+  {c:"3 COEUR",    r:"rouge", s:"maj", v:3, w:41},
+  {c:"5 CARREAU",  r:"rouge", s:"min", v:5, w:34},
+  {c:"9 COEUR",    r:"rouge", s:"maj", v:9, w:27},
+  {c:"3 CARREAU",  r:"rouge", s:"min", v:3, w:23},
+  {c:"9 CARREAU",  r:"rouge", s:"min", v:9, w:17},
+  {c:"7 PIQUE",    r:"noir",  s:"maj", v:7, w:38},
+  {c:"7 TREFLE",   r:"noir",  s:"min", v:7, w:30},
+  {c:"5 PIQUE",    r:"noir",  s:"maj", v:5, w:24},
+  {c:"3 PIQUE",    r:"noir",  s:"maj", v:3, w:18},
+  {c:"5 TREFLE",   r:"noir",  s:"min", v:5, w:16},
+  {c:"3 TREFLE",   r:"noir",  s:"min", v:3, w:12},
+  {c:"9 PIQUE",    r:"noir",  s:"maj", v:9, w:11},
+  {c:"9 TREFLE",   r:"noir",  s:"min", v:9, w:9},
+];
+let CARD=null;
+
+function openCardGrid(){
+  S.effect="card";
+  $("#pkYear").style.display="none";
+  const c=$("#grid .cats");
+  c.innerHTML=`<div class="cat" data-card="force">FORCE<br>7 coeur</div>`
+    + `<div class="cat" data-card="div" style="color:#8fbf8f">DIVINATION<br>libre</div>`;
+  $$("#grid .cat[data-card]").forEach(t=>t.onclick=()=>{ buzz(15); openCard(t.dataset.card); });
+  if(store.opts.guide){ $("#grid").classList.add("show"); } else { $("#grid").classList.remove("show"); }
+  show("grid");
+}
+function openCard(mode){
+  CARD={mode, step:1, pool:CARD_POOL.slice(), idx:0, hist:[], couleur:null};
+  cardRender();
+  show("card");
+}
+/** Étape finale : force = sortie écrite, divination = liste de candidats. */
+function cardFinal(){ return CARD.step===9; }
+function cardRender(){
+  const fin=cardFinal();
+  $("#cardYes").style.display = fin ? "none" : "";
+  $("#cardNo").style.display  = (fin || CARD.step===1) ? "none" : "";
+  if(CARD.step===1){
+    $("#cardYes").textContent="SUITE";
+    $("#cardCue").innerHTML=
+      (CARD.mode==="force"
+        ? "AVANT TOUT — pose ta prédiction : billet écrit et retourné, ou note antidatée dans Trident.<br><br>"
+        : "")
+      +"CADRAGE — « Pense à une carte… mais rendons ça vraiment impossible : pas de figure, on les visualise trop facilement. "
+      +"Pas d'as non plus, tout le monde y va. Reste une valeur du milieu, ni tout en bas ni tout en haut… "
+      +"et franchement, un chiffre impair paraît toujours plus aléatoire, non&nbsp;? »<br><br>"
+      +"Laisse-le fixer sa carte, puis passe à la suite.";
+    $("#cardOuts").textContent="";
+    return;
+  }
+  $("#cardYes").textContent="OUI";
+  if(CARD.step===2){
+    $("#cardCue").innerHTML=
+      "PERCEPTION 1 — n'interroge pas, AFFIRME : « Il y a quelque chose de chaud qui monte… c'est rouge. »<br>"
+      +"Lis la réaction → OUI (rouge) / NON (noir).";
+  }else if(CARD.step===3){
+    $("#cardCue").innerHTML=
+      "PERCEPTION 2 — « Et une valeur qui revient sans arrêt… le 7. »<br>"
+      +"Hochement, sourire, pupille = touché → OUI. Aucune réaction → NON (le 7 sort du pool).";
+  }else if(CARD.step===4){
+    const maj = CARD.couleur==="rouge" ? "COEUR" : "PIQUE";
+    const min = CARD.couleur==="rouge" ? "CARREAU" : "TREFLE";
+    $("#cardCue").innerHTML=
+      "PERCEPTION 3 — « Je vois une forme pleine, franche… plutôt "+maj+" que "+min+", non&nbsp;? »<br>"
+      +"OUI = "+maj+" · NON = "+min+".";
+  }else if(CARD.mode==="force"){
+    $("#cardCue").innerHTML=
+      "SORTIE ÉCRITE — écris la 1re carte face à toi, rature à blanc (ongle sur le carton, le stylo ne touche pas), "
+      +"bascule le billet contre le dos de ta main, écris la 2e au dos, souffle sur l'encre.<br>"
+      +"« Nomme ta carte, à voix haute » → montre la face qui correspond.";
+  }else{
+    $("#cardCue").innerHTML=
+      "CANDIDATS classés — tap pour faire défiler. Monte par paliers : la couleur d'abord, "
+      +"puis la valeur, puis la carte entière. Si tu sens un doute, redescends d'un cran et laisse-le confirmer.";
+  }
+  cardOuts();
+}
+function cardOuts(){
+  const el=$("#cardOuts");
+  if(!cardFinal()){
+    el.textContent = CARD.pool.slice(0,4).map(c=>c.c).join(" · ") + (CARD.pool.length>4 ? " · +"+(CARD.pool.length-4) : "");
+    return;
+  }
+  if(CARD.mode==="force"){
+    const o=CARD.pool.slice(0,2);
+    el.textContent = "RECTO "+o[0].c+"  —  VERSO "+(o[1]?o[1].c:"—");
+    psSend("= "+o[0].c);
+  }else{
+    const cur=CARD.pool[CARD.idx];
+    el.textContent = cur ? (CARD.idx+1)+"/"+CARD.pool.length+"   "+cur.c : "—";
+    if(cur) psSend(CARD.pool.length===1 ? "= "+cur.c : cur.c+" ("+CARD.pool.length+")");
+  }
+}
+function cardAnswer(oui){
+  if(!CARD || cardFinal()) return;
+  buzz(20);
+  CARD.hist.push({step:CARD.step, pool:CARD.pool.slice(), couleur:CARD.couleur});
+  if(CARD.step===1){ CARD.step=2; cardRender(); return; }
+  let f;
+  if(CARD.step===2){
+    CARD.couleur = oui ? "rouge" : "noir";
+    f = c => c.r===CARD.couleur;
+  }else if(CARD.step===3){
+    f = c => oui ? c.v===7 : c.v!==7;
+  }else{
+    f = c => c.s===(oui?"maj":"min");
+  }
+  const filtre=CARD.pool.filter(f);
+  // jamais laisser le performeur sans issue : un filtre qui vide tout est ignoré
+  if(filtre.length) CARD.pool=filtre;
+  CARD.idx=0;
+  // force : on tranche dès la couleur ; divination : trois perceptions puis la liste
+  if(CARD.mode==="force") CARD.step=9;
+  else CARD.step = CARD.step===4 ? 9 : CARD.step+1;
+  cardRender();
+}
+function cardUndo(){
+  if(!CARD || !CARD.hist.length) return;
+  buzz([10,40,10]);
+  const h=CARD.hist.pop();
+  CARD.step=h.step; CARD.pool=h.pool; CARD.couleur=h.couleur; CARD.idx=0;
+  cardRender();
+}
+function cardCycle(){
+  if(!CARD || !cardFinal() || CARD.mode==="force") return;
+  CARD.idx=(CARD.idx+1)%CARD.pool.length;
+  buzz(12);
+  cardOuts();
+}
+$("#cardYes").onclick=e=>{ e.stopPropagation(); cardAnswer(true); };
+$("#cardNo").onclick=e=>{ e.stopPropagation(); cardAnswer(false); };
+$("#card").addEventListener("click",()=>{ if(cardFinal()) cardCycle(); });
+
+/* =====================================================================
    REMOTE — clavier HID & mode chiffres
    ===================================================================== */
 function keyId(e){ return e.key.length===1 ? e.key : e.code; }
@@ -2012,6 +2172,13 @@ document.addEventListener("keydown",e=>{
     if(k===map.A || digit===1) cscAnswer(true);
     else if(k===map.B || digit===2) cscAnswer(false);
     else if(k===map.D || digit===0) cscUndo();
+    e.preventDefault();
+  }
+  else if(S.screen==="card"){
+    if(k===map.A || digit===1) cardFinal() ? cardCycle() : cardAnswer(true);
+    else if(k===map.B || digit===2) cardAnswer(false);
+    else if(k===map.C || digit===3) cardCycle();
+    else if(k===map.D || digit===0) cardUndo();
     e.preventDefault();
   }
   else if(S.screen==="converge"){
