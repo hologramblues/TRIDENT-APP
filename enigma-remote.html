@@ -111,6 +111,27 @@
   #card .cv-q{color:transparent}
   .guide #card .cv-q{color:var(--amber)}
 
+  /* ————— L'Oracle ————— */
+  #orIn{width:100%;background:#0c0c0c;border:1px solid #2a2a2a;color:var(--ink);
+    font-family:ui-monospace,monospace;font-size:17px;padding:12px;border-radius:8px;outline:none}
+  .or-decode{font-family:ui-monospace,monospace;font-size:12px;color:var(--amber);
+    letter-spacing:.06em;margin-top:8px;min-height:16px}
+  .or-profil{font-size:12px;color:var(--mut);line-height:1.55;margin-top:6px;min-height:32px}
+  .or-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .or-chip{font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:7px 10px;
+    border:1px solid #2a2a2a;border-radius:14px;color:var(--mut);cursor:pointer}
+  .or-chip.on{border-color:var(--amber);color:var(--amber)}
+  .or-fiche{border:1px solid #1d1d1d;border-radius:10px;padding:11px 12px;margin-bottom:8px;background:#0a0a0a}
+  .or-fiche.top{border-color:var(--amber-dim);background:#0e0c07}
+  .or-fiche .f-nom{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:.04em}
+  .or-fiche .f-sub{font-size:11px;color:var(--mut);margin-top:3px;line-height:1.5}
+  .or-fiche .f-det{font-size:12px;color:var(--amber);margin-top:6px}
+  .or-fiche.rev{opacity:.4}
+  .or-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .or-act{font-size:11px;letter-spacing:.1em;padding:7px 11px;border:1px solid #2a2a2a;
+    border-radius:6px;color:var(--mut);cursor:pointer}
+  .or-act.warn{border-color:#5a2a2a;color:#c98a8a}
+
   /* passcode */
   .pc-head{margin-top:16vh;text-align:center}
   .pc-title{color:#4a463c;font-size:15px;font-weight:400;letter-spacing:.02em}
@@ -247,6 +268,7 @@
   <button class="btn go" data-go="pin"><b>Code PIN</b><small>4 chiffres &middot; formes puis questions</small></button>
   <button class="btn go" data-go="csc"><b>Cryptogramme</b><small>3 chiffres carte &middot; divination propless</small></button>
   <button class="btn go" data-go="card"><b>Carte pens&eacute;e</b><small>R&eacute;duction de choix &middot; force ou divination</small></button>
+  <button class="btn go" data-go="oracle"><b>L'Oracle</b><small>Readings &middot; tarot &middot; Q&amp;A one-ahead</small></button>
   <button class="btn go" data-go="anagram"><b>Anagrammes</b><small>PA transgressif &middot; hooks &middot; exit hooks</small></button>
   <button class="btn go" data-go="dob"><b>Date de naissance</b><small>Signe puis dichotomie sur le jour</small></button>
   <button class="btn go" data-go="trident"><b>Trident</b><small>Master word &middot; d&eacute;duction &middot; pr&eacute;diction</small></button>
@@ -348,6 +370,38 @@
   <div class="cv-cands" id="cscOuts"></div>
   <div class="zone" id="cscYes" style="bottom:10px;left:10px;width:calc(50% - 15px);height:36%">OUI</div>
   <div class="zone" id="cscNo" style="bottom:10px;right:10px;width:calc(50% - 15px);height:36%">NON</div>
+</div>
+
+<!-- ======================= L'ORACLE — saisie ======================= -->
+<div class="screen panel" id="oracle">
+  <div class="back" data-go="home">&larr; Accueil</div>
+  <h2>L'ORACLE</h2>
+  <input id="orIn" spellcheck="false" autocomplete="off" autocapitalize="off"
+         placeholder="prenom JJMMAA th&egrave;me&plusmn; /d&eacute;tail">
+  <div class="or-decode" id="orDecode"></div>
+  <div class="or-profil" id="orProfil"></div>
+  <div class="hint" style="margin-top:10px">Habillage</div>
+  <div class="or-chips" id="orHab"></div>
+  <div class="or-acts" style="margin-top:14px">
+    <span class="or-act" id="orAdd">+ AJOUTER &Agrave; LA FILE</span>
+    <span class="or-act" id="orGoFile">FILE (<b id="orCount">0</b>)</span>
+  </div>
+  <div class="hint" style="margin-top:12px">
+    Th&egrave;mes&nbsp;: <b>a</b> amour &middot; <b>t</b> travail &middot; <b>ar</b> argent &middot; <b>s</b> sant&eacute; &middot;
+    <b>f</b> famille &middot; <b>e</b> enfants &middot; <b>d</b> deuil &middot; <b>v</b> voyage &middot; <b>j</b> conflit &middot; <b>x</b> autre.
+    Modificateurs&nbsp;: <b>+</b> esp&egrave;re un oui &middot; <b>-</b> craint la r&eacute;ponse &middot; <b>?</b> doit trancher.
+  </div>
+</div>
+
+<!-- ======================= L'ORACLE — file ======================= -->
+<div class="screen panel" id="orFile">
+  <div class="back" data-go="oracle">&larr; Saisie</div>
+  <h2>FILE</h2>
+  <div class="hint">La fiche du haut est celle &agrave; r&eacute;v&eacute;ler maintenant. Toucher une fiche pour la d&eacute;plier.</div>
+  <div id="orList" style="margin-top:10px"></div>
+  <div class="or-acts">
+    <span class="or-act warn" id="orWipe">EFFACER LA S&Eacute;ANCE</span>
+  </div>
 </div>
 
 <!-- ======================= CARTE PENSÉE ======================= -->
@@ -723,6 +777,7 @@ $$("[data-go]").forEach(el=>el.addEventListener("click",()=>{
   else if(t==="pin"){ startPin(); }
   else if(t==="csc"){ openCsc(); }
   else if(t==="card"){ openCardGrid(); }
+  else if(t==="oracle"){ openOracle(); }
   else if(t==="anagram"){ openAnagGrid(); }
   else if(t==="dob"){ openDobGrid(); }
   else if(t==="trident"){
@@ -2127,6 +2182,300 @@ function cardCycle(){
 $("#cardYes").onclick=e=>{ e.stopPropagation(); cardAnswer(true); };
 $("#cardNo").onclick=e=>{ e.stopPropagation(); cardAnswer(false); };
 $("#card").addEventListener("click",()=>{ if(cardFinal()) cardCycle(); });
+
+/* =====================================================================
+   L'ORACLE — module de readings (cold reading, tarot, numérologie, Q&A)
+   Trois couches : socle invisible (ce qui produit les vrais hits) →
+   habillage (retraduit dans le vocabulaire de l'art choisi) → formulation.
+   Tout ce qui suit est LOCAL : aucune de ces données ne dépend du réseau.
+   Le LLM (phase 2) ne sert jamais à retrouver une donnée calculable ici,
+   seulement à composer le discours.
+   ===================================================================== */
+
+/* ---------- tables ---------- */
+const OR_ZODIAC=[
+  {s:"BELIER",     d:[[3,21],[4,19]],  el:"feu",   pl:"Mars",    t:"élan, impatience, franchise", o:"brûle ses départs, s'épuise en premier"},
+  {s:"TAUREAU",    d:[[4,20],[5,20]],  el:"terre", pl:"Vénus",   t:"constance, sensualité, ténacité", o:"s'enferme dans ce qu'il a construit"},
+  {s:"GEMEAUX",    d:[[5,21],[6,20]],  el:"air",   pl:"Mercure", t:"curiosité, adaptation, parole", o:"papillonne, remet à demain"},
+  {s:"CANCER",     d:[[6,21],[7,22]],  el:"eau",   pl:"Lune",    t:"mémoire, protection, intuition", o:"garde les blessures au chaud"},
+  {s:"LION",       d:[[7,23],[8,22]],  el:"feu",   pl:"Soleil",  t:"générosité, présence, loyauté", o:"a besoin d'être vu pour exister"},
+  {s:"VIERGE",     d:[[8,23],[9,22]],  el:"terre", pl:"Mercure", t:"précision, service, lucidité", o:"se juge plus durement que quiconque"},
+  {s:"BALANCE",    d:[[9,23],[10,22]], el:"air",   pl:"Vénus",   t:"équilibre, diplomatie, esthétique", o:"ne tranche pas, s'annule pour l'autre"},
+  {s:"SCORPION",   d:[[10,23],[11,21]],el:"eau",   pl:"Pluton",  t:"intensité, vérité, endurance", o:"garde rancune, teste ceux qu'il aime"},
+  {s:"SAGITTAIRE", d:[[11,22],[12,21]],el:"feu",   pl:"Jupiter", t:"horizon, foi, sincérité", o:"fuit ce qui l'enferme, promet trop"},
+  {s:"CAPRICORNE", d:[[12,22],[1,19]], el:"terre", pl:"Saturne", t:"exigence, durée, responsabilité", o:"porte tout seul, s'interdit le repos"},
+  {s:"VERSEAU",    d:[[1,20],[2,18]],  el:"air",   pl:"Uranus",  t:"liberté, idées, fidélité en amitié", o:"prend de la distance quand ça chauffe"},
+  {s:"POISSONS",   d:[[2,19],[3,20]],  el:"eau",   pl:"Neptune", t:"empathie, imaginaire, don de soi", o:"absorbe tout, se perd dans les autres"},
+];
+/* Signe chinois : 1924 = année du Rat. Le Nouvel An tombe entre le 21 janvier
+   et le 21 février — une naissance avant cette date appartient à l'année
+   précédente. Table des quantièmes de Nouvel An (2 chiffres/an) depuis 1924 :
+   sans elle, un spectateur né en janvier verrait son signe faux. */
+const OR_CHINOIS=["Rat","Buffle","Tigre","Lapin","Dragon","Serpent","Cheval","Chèvre","Singe","Coq","Chien","Cochon"];
+const OR_CNY="3624443323413048372645352442315039274636254433224129483727453424433149392846362544332140304837274634234231493828473625443351402948372746352341315038284736244332224029493826453423413150392847362543322241294 8".replace(/\s/g,"");
+function orChinois(j,m,a){
+  const q = m===1 ? j : m===2 ? 31+j : 999;          // quantième (janv/févr seulement)
+  const idx=(a-1924)*2;
+  const cny = (idx>=0 && idx+2<=OR_CNY.length) ? +OR_CNY.slice(idx,idx+2) : 33; // ~1er févr. par défaut
+  const an = q < cny ? a-1 : a;                       // né avant le Nouvel An → année précédente
+  return OR_CHINOIS[((an-1924)%12+12)%12];
+}
+/* 22 arcanes majeurs — significations traditionnelles (droit / envers) */
+const OR_TAROT=[
+  {n:0, c:"LE MAT",             d:"départ, liberté, saut dans l'inconnu",        r:"errance, imprudence"},
+  {n:1, c:"LE BATELEUR",        d:"commencement, talent, possibilités",          r:"dispersion, illusion de départ"},
+  {n:2, c:"LA PAPESSE",         d:"savoir intérieur, patience, secret",          r:"repli, secret qui pèse"},
+  {n:3, c:"L'IMPERATRICE",      d:"création, abondance, féminin fertile",        r:"étouffement, contrôle affectif"},
+  {n:4, c:"L'EMPEREUR",         d:"structure, autorité, cadre",                  r:"rigidité, figure paternelle pesante"},
+  {n:5, c:"LE PAPE",            d:"transmission, guide, sens",                   r:"dogme, conformisme"},
+  {n:6, c:"L'AMOUREUX",         d:"choix, lien, engagement du cœur",             r:"indécision, tiraillement"},
+  {n:7, c:"LE CHARIOT",         d:"élan, victoire, mise en route",               r:"fuite en avant, direction perdue"},
+  {n:8, c:"LA JUSTICE",         d:"équilibre, décision juste, contrat",          r:"rigidité, jugement subi"},
+  {n:9, c:"L'ERMITE",           d:"retrait, sagesse, temps long",                r:"solitude, repli qui dure"},
+  {n:10,c:"LA ROUE DE FORTUNE", d:"cycle, tournant, chance",                     r:"répétition, éternel recommencement"},
+  {n:11,c:"LA FORCE",           d:"maîtrise douce, courage tranquille",          r:"colère contenue, force gaspillée"},
+  {n:12,c:"LE PENDU",           d:"suspension, autre regard, sacrifice",         r:"blocage, attente stérile"},
+  {n:13,c:"L'ARCANE SANS NOM",  d:"fin nécessaire, mue, nettoyage",              r:"deuil non fait, on s'accroche"},
+  {n:14,c:"TEMPERANCE",         d:"guérison, dosage, retour du calme",           r:"tiédeur, mélange qui ne prend pas"},
+  {n:15,c:"LE DIABLE",          d:"désir, attachement, lien qui tient",          r:"dépendance, emprise"},
+  {n:16,c:"LA MAISON DIEU",     d:"rupture, écroulement libérateur",             r:"choc encaissé, murs qu'on rebâtit"},
+  {n:17,c:"L'ETOILE",           d:"espérance, don, retour à la source",          r:"nudité, foi entamée"},
+  {n:18,c:"LA LUNE",            d:"rêve, inconscient, brouillard",               r:"peur, illusion, mensonge à soi"},
+  {n:19,c:"LE SOLEIL",          d:"clarté, joie, lien vrai",                     r:"orgueil, chaleur en façade"},
+  {n:20,c:"LE JUGEMENT",        d:"appel, renaissance, on se relève",            r:"passé qui rattrape"},
+  {n:21,c:"LE MONDE",           d:"accomplissement, boucle bouclée",             r:"cycle inachevé, il manque un pas"},
+];
+/* Repères de cohorte : gardés seulement si la personne avait 8-25 ans (fenêtre formative) */
+const OR_EVENEMENTS=[
+  {an:1968,q:"mai 68"},{an:1969,q:"les premiers pas sur la Lune"},{an:1974,q:"le choc pétrolier"},
+  {an:1981,q:"l'élection de Mitterrand"},{an:1986,q:"Tchernobyl"},{an:1989,q:"la chute du Mur"},
+  {an:1994,q:"la mort de Kurt Cobain"},{an:1995,q:"les grèves de 95"},{an:1998,q:"la Coupe du monde 98"},
+  {an:2001,q:"le 11 septembre"},{an:2002,q:"le passage à l'euro"},{an:2005,q:"les émeutes en banlieue"},
+  {an:2008,q:"la crise financière"},{an:2012,q:"l'arrivée des smartphones partout"},
+  {an:2015,q:"les attentats de Paris"},{an:2018,q:"les gilets jaunes"},{an:2020,q:"le confinement"},
+];
+/* Sociologie du prénom : année de pic en France → écart avec la naissance = information */
+const OR_PRENOMS={
+  marie:1935,jeanne:1920,jean:1940,michel:1948,monique:1946,alain:1952,daniel:1950,
+  philippe:1955,catherine:1955,patrick:1958,martine:1955,brigitte:1957,dominique:1958,
+  sylvie:1960,pascal:1962,thierry:1963,isabelle:1965,nathalie:1966,valerie:1968,
+  christophe:1970,laurent:1968,sandrine:1972,stephanie:1974,sebastien:1976,cedric:1978,
+  julien:1980,aurelie:1982,jerome:1976,vanessa:1984,romain:1986,thomas:1988,
+  maxime:1990,camille:1992,marine:1993,kevin:1992,lea:1998,manon:1998,lucas:1998,
+  chloe:2002,enzo:2003,emma:2005,nathan:2006,jules:2012,louise:2015,gabriel:2017,
+  raphael:2016,adam:2018,jade:2018,alice:2016,arthur:2014,hugo:2000,theo:2001,
+};
+const OR_THEMES={a:"amour",t:"travail",ar:"argent",s:"santé",f:"famille",e:"enfants",d:"deuil",v:"voyage",j:"conflit",x:"autre"};
+const OR_MODIFS={"+":"espère un oui","-":"craint la réponse","−":"craint la réponse","?":"doit trancher"};
+const OR_HABILLAGES=["tarot","numérologie","astrologie","lecture de main","prénom","profil de naissance","intuition nue"];
+
+/* ---------- calculs du socle ---------- */
+function orReduit(n,maitres){ // réduction numérologique, maîtres nombres préservés
+  while(n>9 && !(maitres && [11,22,33].includes(n))) n=String(n).split("").reduce((a,c)=>a+ +c,0);
+  return n;
+}
+function orChemin(j,m,a){ // chemin de vie : composants réduits séparément puis sommés
+  const s=orReduit(j,true)+orReduit(m,true)+orReduit(String(a).split("").reduce((x,c)=>x+ +c,0),true);
+  return orReduit(s,true);
+}
+function orSigne(j,m){
+  for(const z of OR_ZODIAC){
+    const [d1,d2]=z.d;
+    if((m===d1[0]&&j>=d1[1])||(m===d2[0]&&j<=d2[1])) return z;
+  }
+  return OR_ZODIAC[9]; // capricorne (à cheval sur l'année)
+}
+/** Profil complet, instantané, sans réseau. */
+function orProfil(prenom,j,m,a){
+  const now=new Date(), auj=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const naiss=new Date(a,m-1,j);
+  let age=auj.getFullYear()-a; if(auj.getMonth()+1<m||(auj.getMonth()+1===m&&auj.getDate()<j)) age--;
+  const z=orSigne(j,m);
+  const p={
+    prenom:(prenom||"").trim(), j,m,a, age,
+    signe:z.s, element:z.el, planete:z.pl, traits:z.t, ombre:z.o,
+    chinois:orChinois(j,m,a),
+    chemin:orChemin(j,m,a),
+    anneePerso:orReduit(orReduit(j,false)+orReduit(m,false)+orReduit(String(now.getFullYear()).split("").reduce((x,c)=>x+ +c,0),false),false),
+    naissance:naiss,
+  };
+  // fenêtre formative : ce dont il se souvient vraiment
+  p.cohorte=OR_EVENEMENTS.map(e=>({...e,ageAlors:e.an-a})).filter(e=>e.ageAlors>=8&&e.ageAlors<=25);
+  // âge relatif scolaire (coupure 31 décembre)
+  p.scolaire = m<=3 ? "parmi les plus âgés de sa classe" : m>=10 ? "parmi les plus jeunes de sa classe" : null;
+  // transitions de vie
+  const tr=[];
+  if(age>=28&&age<=33) tr.push("transition de la trentaine : remise en cause des choix posés à 20 ans");
+  if(age>=29&&age<=31) tr.push("retour de Saturne : ce qui n'est pas juste se fissure");
+  if(age>=40&&age<=45) tr.push("passage de mi-vie : le temps devient compté");
+  if(age>=50&&age<=55) tr.push("transition de la cinquantaine : transmission ou dernier virage");
+  if(age>=58&&age<=60) tr.push("second retour de Saturne : bilan");
+  p.transitions=tr;
+  // stade d'Erikson
+  p.stade = age<20?"identité vs confusion" : age<40?"intimité vs isolement" : age<65?"générativité vs stagnation" : "intégrité vs désespoir";
+  // sociologie du prénom
+  const pic=OR_PRENOMS[norm(p.prenom).toLowerCase()];
+  if(pic){
+    const ecart=a-pic;
+    p.prenomPic=pic;
+    p.prenomNote = Math.abs(ecart)<=6 ? "prénom pile dans sa génération"
+      : ecart<-6 ? "prénom en avance sur sa génération (parents jeunes ou milieu traditionnel)"
+      : "prénom d'une génération antérieure (transmission familiale, hommage)";
+  }
+  return p;
+}
+/** Ligne de profil compacte affichée dès la frappe. */
+function orLigne(p){
+  const b=[p.prenom.toUpperCase(), p.age+" ans", p.signe+" ("+p.element+")", p.chinois,
+    "CV "+p.chemin, "AP "+p.anneePerso];
+  if(p.cohorte.length) b.push(p.cohorte[0].q+" à "+p.cohorte[0].ageAlors+" ans");
+  if(p.transitions.length) b.push(p.transitions[0].split(" :")[0]);
+  return b.join(" · ");
+}
+
+/* ---------- mini-langage de saisie ----------
+   prenom JJMMAA lettre± /détail     ex. "marie 270482 t+ /veut démissionner" */
+function orParse(txt){
+  const r={prenom:null,j:null,m:null,a:null,theme:null,modif:null,detail:null,ok:false};
+  if(!txt) return r;
+  const slash=txt.indexOf("/");
+  if(slash>=0){ r.detail=txt.slice(slash+1).trim()||null; txt=txt.slice(0,slash); }
+  const mots=txt.trim().split(/\s+/).filter(Boolean);
+  for(const mot of mots){
+    if(/^\d{6}$/.test(mot)){
+      const j=+mot.slice(0,2), m=+mot.slice(2,4), aa=+mot.slice(4,6);
+      const now=new Date().getFullYear()%100;
+      const an = aa<=now ? 2000+aa : 1900+aa;
+      // date réellement existante (le 31 février doit être rejeté, pas corrigé en silence)
+      const d=new Date(an,m-1,j);
+      if(m>=1&&m<=12&&j>=1&&d.getDate()===j&&d.getMonth()===m-1){ r.j=j; r.m=m; r.a=an; }
+      continue;
+    }
+    const th=mot.match(/^(ar|[atsfedvjx])([+\-−?])?$/i);
+    if(th && !r.theme){ r.theme=th[1].toLowerCase(); r.modif=th[2]||null; continue; }
+    if(!r.prenom && /^[a-zà-ÿ'’-]{2,}$/i.test(mot)) r.prenom=mot;
+  }
+  r.ok = !!(r.prenom && r.j);
+  return r;
+}
+function orDecode(r){
+  const b=[];
+  if(r.prenom) b.push(r.prenom.toUpperCase());
+  if(r.j) b.push(String(r.j).padStart(2,"0")+"/"+String(r.m).padStart(2,"0")+"/"+r.a);
+  if(r.theme) b.push(OR_THEMES[r.theme]+(r.modif?" — "+OR_MODIFS[r.modif]:""));
+  if(r.detail) b.push("« "+r.detail+" »");
+  return b.length ? b.join("  ·  ") : "prenom JJMMAA thème± /détail";
+}
+
+/* ---------- séance : persistance locale, clés oracle:* ----------
+   La séance doit survivre à un crash en plein show. Aucune donnée
+   spectateur ne persiste au-delà : effacement complet à la demande. */
+const orStore={
+  get seance(){ try{ return JSON.parse(localStorage.getItem("oracle:seance")||"[]"); }catch(_){ return []; } },
+  set seance(v){ try{ localStorage.setItem("oracle:seance", JSON.stringify(v)); }catch(_){} },
+};
+let OR={habillage:"tarot", ouverte:null};
+
+/** Point d'entrée UNIQUE de création de fiche : saisie manuelle, pont natif,
+    ou future webview de capture (Plum, Inject, Goo, Elips, WikiTest…).
+    La saisie manuelle n'est pas couplée au reste du moteur. */
+function oracleIngest(payload){
+  if(!payload) return null;
+  const p = typeof payload==="string" ? orParse(payload) : payload;
+  if(!p || !p.prenom) return null;
+  const fiche={
+    id:"f"+Date.now()+Math.floor(Math.random()*1000),
+    ts:Date.now(),
+    prenom:p.prenom, j:p.j||null, m:p.m||null, a:p.a||null,
+    theme:p.theme||null, modif:p.modif||null, detail:p.detail||null,
+    habillage:p.habillage||OR.habillage,
+    revelee:false, script:null, partition:null, tirage:null,
+  };
+  const s=orStore.seance; s.push(fiche); orStore.seance=s;
+  orRenderFile(); orCount();
+  return fiche;
+}
+window.oracleIngest=oracleIngest; // exposé au pont natif
+
+function orFicheProfil(f){ return (f.j&&f.m&&f.a) ? orProfil(f.prenom,f.j,f.m,f.a) : null; }
+function orCount(){ const n=orStore.seance.filter(f=>!f.revelee).length; const el=$("#orCount"); if(el) el.textContent=n; }
+
+/* ---------- écran saisie ---------- */
+function openOracle(){ orRenderHab(); orLive(); orCount(); show("oracle"); }
+function orRenderHab(){
+  $("#orHab").innerHTML=OR_HABILLAGES.map(h=>
+    `<span class="or-chip${h===OR.habillage?" on":""}" data-hab="${h}">${h}</span>`).join("");
+  $$("#orHab .or-chip").forEach(c=>c.onclick=()=>{ OR.habillage=c.dataset.hab; buzz(10); orRenderHab(); });
+}
+function orLive(){
+  const r=orParse($("#orIn").value);
+  $("#orDecode").textContent=orDecode(r);
+  if(r.ok){
+    const p=orProfil(r.prenom,r.j,r.m,r.a);
+    const extra=[];
+    if(p.scolaire) extra.push(p.scolaire);
+    if(p.prenomNote) extra.push(p.prenomNote);
+    if(p.transitions.length) extra.push(p.transitions[0]);
+    $("#orProfil").innerHTML=orLigne(p)+(extra.length?"<br><span style='color:#6b6659'>"+extra.join(" · ")+"</span>":"");
+  }else{
+    $("#orProfil").textContent="";
+  }
+}
+$("#orIn").addEventListener("input",orLive);
+$("#orAdd").onclick=()=>{
+  const r=orParse($("#orIn").value);
+  if(!r.prenom){ buzz([10,40,10]); return; }
+  r.habillage=OR.habillage;
+  oracleIngest(r);
+  buzz(30);
+  $("#orIn").value=""; orLive();
+};
+$("#orGoFile").onclick=()=>{ orRenderFile(); show("orFile"); };
+
+/* ---------- écran file (one-ahead) ---------- */
+function orRenderFile(){
+  const el=$("#orList"); if(!el) return;
+  const s=orStore.seance;
+  if(!s.length){ el.innerHTML='<div class="hint">Aucune fiche. La file se remplit depuis la saisie ou par ingestion.</div>'; orCount(); return; }
+  const actives=s.filter(f=>!f.revelee), faites=s.filter(f=>f.revelee);
+  el.innerHTML=[...actives,...faites].map((f,i)=>{
+    const p=orFicheProfil(f);
+    const top = !f.revelee && i===0;
+    const sub = p ? orLigne(p) : "date non renseignée";
+    const det = [f.theme?OR_THEMES[f.theme]+(f.modif?" ("+OR_MODIFS[f.modif]+")":""):null, f.detail?"« "+f.detail+" »":null]
+      .filter(Boolean).join(" · ");
+    const ouverte = OR.ouverte===f.id;
+    return `<div class="or-fiche${top?" top":""}${f.revelee?" rev":""}" data-f="${f.id}">
+      <div class="f-nom">${(f.prenom||"").toUpperCase()}</div>
+      <div class="f-sub">${sub}</div>
+      ${det?`<div class="f-det">${det}</div>`:""}
+      ${ouverte?`<div class="f-sub" style="margin-top:8px">habillage : ${f.habillage}${p&&p.cohorte.length?"<br>repères : "+p.cohorte.map(c=>c.q+" ("+c.ageAlors+" ans)").join(" · "):""}${p&&p.transitions.length?"<br>"+p.transitions.join("<br>"):""}${p?"<br>stade : "+p.stade+"<br>ombre du signe : "+p.ombre:""}</div>
+        <div class="or-acts">
+          <span class="or-act" data-rev="${f.id}">${f.revelee?"REMETTRE EN FILE":"MARQUER RÉVÉLÉE"}</span>
+          <span class="or-act warn" data-del="${f.id}">SUPPRIMER</span>
+        </div>`:""}
+    </div>`;
+  }).join("");
+  $$("#orList .or-fiche").forEach(d=>d.onclick=e=>{
+    if(e.target.dataset.rev||e.target.dataset.del) return;
+    OR.ouverte = OR.ouverte===d.dataset.f ? null : d.dataset.f; buzz(10); orRenderFile();
+  });
+  $$("#orList [data-rev]").forEach(b=>b.onclick=()=>{
+    const s2=orStore.seance; const f=s2.find(x=>x.id===b.dataset.rev);
+    if(f){ f.revelee=!f.revelee; orStore.seance=s2; buzz(20); orRenderFile(); }
+  });
+  $$("#orList [data-del]").forEach(b=>b.onclick=()=>{
+    orStore.seance=orStore.seance.filter(x=>x.id!==b.dataset.del); buzz([10,40,10]); orRenderFile();
+  });
+  orCount();
+}
+$("#orWipe").onclick=()=>{
+  if(!orStore.seance.length) return;
+  if(confirm("Effacer toute la séance ? Aucune donnée spectateur ne sera conservée.")){
+    try{ localStorage.removeItem("oracle:seance"); }catch(_){}
+    OR.ouverte=null; buzz(40); orRenderFile();
+  }
+};
 
 /* =====================================================================
    REMOTE — clavier HID & mode chiffres
